@@ -1,3 +1,4 @@
+"use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -12,8 +13,52 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("admin@sekolah.com");
+  const [password, setPassword] = useState("password");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Terjadi kesalahan.');
+      }
+
+      toast({
+        title: "Login Berhasil",
+        description: "Anda akan diarahkan ke dasbor.",
+      });
+
+      router.push('/dashboard');
+
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Login Gagal",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="w-full lg:grid lg:min-h-[100vh] lg:grid-cols-2 xl:min-h-[100vh]">
       <div className="hidden bg-muted lg:block">
@@ -32,12 +77,12 @@ export default function LoginPage() {
              <div className="mb-4 flex justify-center">
               <AppLogo className="h-12 w-12 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold">Absensi Sekolah</h1>
+            <h1 className="text-3xl font-bold">Sekolah</h1>
             <p className="text-balance text-muted-foreground">
-              Login Admin untuk Manajemen Absensi
+              Login untuk Manajemen Absensi
             </p>
           </div>
-          <form className="grid gap-4">
+          <form className="grid gap-4" onSubmit={handleSubmit}>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -45,7 +90,9 @@ export default function LoginPage() {
                 type="email"
                 placeholder="admin@sekolah.com"
                 required
-                defaultValue="admin@sekolah.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="grid gap-2">
@@ -58,10 +105,17 @@ export default function LoginPage() {
                   Lupa password?
                 </Link>
               </div>
-              <Input id="password" type="password" required defaultValue="password" />
+              <Input 
+                id="password" 
+                type="password" 
+                required 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
-            <Button asChild type="submit" className="w-full">
-              <Link href="/dashboard">Masuk</Link>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Memproses...' : 'Masuk'}
             </Button>
           </form>
         </div>
