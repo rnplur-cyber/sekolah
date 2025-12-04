@@ -1,8 +1,9 @@
+
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ScanLine, Users, UserSquare, School } from "lucide-react";
+import { LayoutDashboard, ScanLine, Users, UserSquare, School, BookText } from "lucide-react";
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -34,6 +35,11 @@ const navItems = [
     href: "/dashboard/classes",
     label: "Classes",
     icon: School,
+  },
+  {
+    href: "/dashboard/report",
+    label: "Attendance Report",
+    icon: BookText,
   },
 ];
 
