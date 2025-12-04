@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ScanLine, Users, UserSquare, School, BookText, UserPlus, Library } from "lucide-react";
+import { LayoutDashboard, ScanLine, Users, UserSquare, School, BookText, UserPlus, Library, Calendar } from "lucide-react";
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -45,6 +45,11 @@ const navItems = [
     href: "/dashboard/subjects",
     label: "Mata Pelajaran",
     icon: Library,
+  },
+  {
+    href: "/dashboard/schedules",
+    label: "Schedules",
+    icon: Calendar,
   },
   {
     href: "/dashboard/report",

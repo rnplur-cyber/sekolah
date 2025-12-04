@@ -82,6 +82,18 @@ export type Subject = {
   name: string;
 };
 
+export type DayOfWeek = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday";
+
+export type Schedule = {
+    id: string;
+    classId: string;
+    subjectId: string;
+    teacherId: string;
+    day: DayOfWeek;
+    startTime: string; // "HH:mm"
+    endTime: string; // "HH:mm"
+};
+
 
 const placeholderAvatars = PlaceHolderImages.filter(img => img.id.startsWith("student-avatar-"));
 const teacherPlaceHolderAvatars = PlaceHolderImages.filter(img => img.id.startsWith("teacher-avatar-"));
@@ -175,4 +187,18 @@ export const teachingJournals: TeachingJournal[] = [
     { id: "JNL-003", teacherId: "TCH-002", classId: "CLS-002", date: subDays(today, 2), subjectMatter: "Newton's Laws of Motion", notes: "Practical examples helped understanding." },
     { id: "JNL-004", teacherId: "TCH-003", classId: "CLS-001", date: subDays(today, 3), subjectMatter: "Analyzing Poetry", notes: "Discussed the meaning behind 'Hujan Bulan Juni'." },
     { id: "JNL-005", teacherId: "TCH-004", classId: "CLS-004", date: subDays(today, 1), subjectMatter: "Introduction to HTML", notes: "Students created their first webpage." },
+];
+
+export const schedules: Schedule[] = [
+    // Class 10-A
+    { id: "SCH-001", classId: "CLS-001", subjectId: "SUB-001", teacherId: "TCH-001", day: "Monday", startTime: "07:30", endTime: "09:00" },
+    { id: "SCH-002", classId: "CLS-001", subjectId: "SUB-003", teacherId: "TCH-003", day: "Monday", startTime: "09:30", endTime: "11:00" },
+    { id: "SCH-003", classId: "CLS-001", subjectId: "SUB-008", teacherId: "TCH-003", day: "Tuesday", startTime: "07:30", endTime: "09:00" },
+
+    // Class 10-B
+    { id: "SCH-004", classId: "CLS-002", subjectId: "SUB-002", teacherId: "TCH-002", day: "Monday", startTime: "07:30", endTime: "09:00" },
+    { id: "SCH-005", classId: "CLS-002", subjectId: "SUB-003", teacherId: "TCH-003", day: "Tuesday", startTime: "09:30", endTime: "11:00" },
+
+    // Class 11-A
+    { id: "SCH-006", classId: "CLS-003", subjectId: "SUB-001", teacherId: "TCH-001", day: "Wednesday", startTime: "07:30", endTime: "09:00" },
 ];
