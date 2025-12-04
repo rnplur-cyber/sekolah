@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import Image from "next/image";
 import { AppLogo } from "@/components/icons";
@@ -17,12 +18,12 @@ export default function LoginPage() {
     <div className="w-full lg:grid lg:min-h-[100vh] lg:grid-cols-2 xl:min-h-[100vh]">
       <div className="hidden bg-muted lg:block">
         <Image
-          src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop"
-          alt="Happy students"
+          src="https://images.unsplash.com/photo-1529390079861-591de354faf5?q=80&w=2070&auto=format&fit=crop"
+          alt="Children in a classroom"
           width="1920"
           height="1080"
           className="h-full w-full object-cover dark:brightness-[0.7]"
-          data-ai-hint="happy students education"
+          data-ai-hint="children classroom"
         />
       </div>
       <div className="flex items-center justify-center py-12">
