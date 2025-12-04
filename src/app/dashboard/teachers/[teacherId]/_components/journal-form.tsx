@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { type Teacher, type Class } from "@/lib/data";
+import { type Teacher, type Class, type TeachingJournal } from "@/lib/data";
 
 const formSchema = z.object({
   classId: z.string().nonempty("Silakan pilih kelas."),
@@ -37,25 +37,36 @@ interface JournalFormProps {
   teacher: Teacher;
   taughtClasses: Class[];
   onSuccess: () => void;
+  existingJournal?: TeachingJournal | null;
 }
 
-export function JournalForm({ teacher, taughtClasses, onSuccess }: JournalFormProps) {
+export function JournalForm({ teacher, taughtClasses, onSuccess, existingJournal }: JournalFormProps) {
   const { toast } = useToast();
+  const isEditMode = !!existingJournal;
+
   const form = useForm<JournalFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      classId: "",
-      subjectMatter: "",
-      notes: "",
+      classId: existingJournal?.classId || "",
+      subjectMatter: existingJournal?.subjectMatter || "",
+      notes: existingJournal?.notes || "",
     },
   });
 
   const onSubmit = (values: JournalFormValues) => {
-    console.log("Entri Jurnal Baru:", { ...values, teacherId: teacher.id, date: new Date() });
-    toast({
-      title: "Entri Jurnal Ditambahkan",
-      description: `Entri baru untuk kelas ${taughtClasses.find(c => c.id === values.classId)?.name} telah disimpan.`,
-    });
+    if (isEditMode) {
+      console.log("Memperbarui Entri Jurnal:", { ...existingJournal, ...values });
+      toast({
+        title: "Entri Jurnal Diperbarui",
+        description: `Entri untuk kelas ${taughtClasses.find(c => c.id === values.classId)?.name} telah diperbarui.`,
+      });
+    } else {
+      console.log("Entri Jurnal Baru:", { ...values, teacherId: teacher.id, date: new Date() });
+      toast({
+        title: "Entri Jurnal Ditambahkan",
+        description: `Entri baru untuk kelas ${taughtClasses.find(c => c.id === values.classId)?.name} telah disimpan.`,
+      });
+    }
     onSuccess();
   };
 
@@ -116,7 +127,7 @@ export function JournalForm({ teacher, taughtClasses, onSuccess }: JournalFormPr
           )}
         />
         <div className="flex justify-end pt-2">
-          <Button type="submit">Simpan Entri</Button>
+          <Button type="submit">{isEditMode ? "Simpan Perubahan" : "Simpan Entri"}</Button>
         </div>
       </form>
     </Form>
