@@ -32,15 +32,45 @@ export type Class = {
   studentCount: number;
 };
 
+export type Employee = {
+    id: string;
+    name: string;
+    role: string;
+    avatarUrl: string;
+    avatarHint: string;
+}
+
+export type TeacherAttendanceRecord = {
+  id: string;
+  teacherId: string;
+  timestamp: Date;
+  status: "Present" | "Late" | "Absent";
+};
+
+export type EmployeeAttendanceRecord = {
+  id: string;
+  employeeId: string;
+  timestamp: Date;
+  status: "Present" | "Late" | "Absent";
+};
+
 
 const placeholderAvatars = PlaceHolderImages.filter(img => img.id.startsWith("student-avatar-"));
 const teacherPlaceHolderAvatars = PlaceHolderImages.filter(img => img.id.startsWith("teacher-avatar-"));
+const employeePlaceHolderAvatars = PlaceHolderImages.filter(img => img.id.startsWith("employee-avatar-"));
+
 
 export const teachers: Teacher[] = [
     { id: "TCH-001", name: "Dr. Siti Aminah", nip: "198001012005012001", subject: "Mathematics", avatarUrl: teacherPlaceHolderAvatars[0]?.imageUrl || "", avatarHint: "woman portrait", taughtClassIds: ["CLS-001", "CLS-003", "CLS-005"] },
     { id: "TCH-002", name: "Drs. Bambang Wijoyo", nip: "197505102003121002", subject: "Physics", avatarUrl: teacherPlaceHolderAvatars[1]?.imageUrl || "", avatarHint: "man portrait", taughtClassIds: ["CLS-002", "CLS-004"] },
     { id: "TCH-003", name: "Retno Wulandari, S.Pd.", nip: "198811202010012003", subject: "Indonesian", avatarUrl: teacherPlaceHolderAvatars[2]?.imageUrl || "", avatarHint: "woman portrait", taughtClassIds: ["CLS-001", "CLS-002", "CLS-003"] },
     { id: "TCH-004", name: "Agus Setiawan, M.Kom.", nip: "198208152008031004", subject: "Computer Science", avatarUrl: teacherPlaceHolderAvatars[3]?.imageUrl || "", avatarHint: "man portrait", taughtClassIds: ["CLS-004", "CLS-005"] },
+];
+
+export const employees: Employee[] = [
+    { id: "EMP-001", name: "Joko Susilo", role: "Administration", avatarUrl: employeePlaceHolderAvatars[0]?.imageUrl || "", avatarHint: "man portrait" },
+    { id: "EMP-002", name: "Sri Rahayu", role: "Librarian", avatarUrl: employeePlaceHolderAvatars[1]?.imageUrl || "", avatarHint: "woman portrait" },
+    { id: "EMP-003", name: "Teguh Santoso", role: "Security", avatarUrl: employeePlaceHolderAvatars[2]?.imageUrl || "", avatarHint: "man portrait" },
 ];
 
 export const classes: Class[] = [
@@ -80,4 +110,15 @@ export const attendanceRecords: AttendanceRecord[] = [
   { id: "REC-004", studentId: "STU-005", timestamp: getRandomTime(today, 7, 8), status: "Present" },
   { id: "REC-005", studentId: "STU-007", timestamp: getRandomTime(today, 7, 8), status: "Present" },
   { id: "REC-006", studentId: "STU-008", timestamp: getRandomTime(today, 7, 8), status: "Late" },
+];
+
+export const teacherAttendanceRecords: TeacherAttendanceRecord[] = [
+    { id: "TREC-001", teacherId: "TCH-001", timestamp: getRandomTime(today, 7, 8), status: "Present" },
+    { id: "TREC-002", teacherId: "TCH-002", timestamp: getRandomTime(today, 7, 8), status: "Present" },
+    { id: "TREC-003", teacherId: "TCH-003", timestamp: getRandomTime(today, 7, 9), status: "Late" },
+];
+
+export const employeeAttendanceRecords: EmployeeAttendanceRecord[] = [
+    { id: "EREC-001", employeeId: "EMP-001", timestamp: getRandomTime(today, 8, 9), status: "Present" },
+    { id: "EREC-002", employeeId: "EMP-002", timestamp: getRandomTime(today, 8, 9), status: "Present" },
 ];
