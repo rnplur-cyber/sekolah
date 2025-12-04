@@ -38,6 +38,8 @@ import {
 import { AdmissionForm } from "./_components/admission-form";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 function getStatusVariant(
   status: AdmissionStatus
@@ -63,15 +65,33 @@ export default function AdmissionsPage() {
   const [open, setOpen] = useState(false);
   const [applicants, setApplicants] = useState<NewStudentApplicant[]>(newStudentApplicants);
   const [currentPage, setCurrentPage] = useState(1);
+  const [academicYearFilter, setAcademicYearFilter] = useState("all");
   const { toast } = useToast();
 
-  const totalPages = Math.ceil(applicants.length / ITEMS_PER_PAGE);
+  const academicYears = useMemo(() => {
+    const years = new Set(applicants.map(app => app.academicYear));
+    return ["all", ...Array.from(years)];
+  }, [applicants]);
+
+  const filteredApplicants = useMemo(() => {
+    return applicants.filter(applicant => {
+      if (academicYearFilter === "all") return true;
+      return applicant.academicYear === academicYearFilter;
+    });
+  }, [applicants, academicYearFilter]);
+
+  const totalPages = Math.ceil(filteredApplicants.length / ITEMS_PER_PAGE);
 
   const paginatedApplicants = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return applicants.slice(startIndex, endIndex);
-  }, [currentPage, applicants]);
+    return filteredApplicants.slice(startIndex, endIndex);
+  }, [currentPage, filteredApplicants]);
+  
+  // Reset to page 1 when filter changes
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [academicYearFilter]);
 
 
   const handleSuccess = () => {
@@ -95,19 +115,36 @@ export default function AdmissionsPage() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <CardTitle>Penerimaan Siswa Baru</CardTitle>
             <CardDescription>
               Kelola dan lacak pendaftaran siswa baru.
             </CardDescription>
           </div>
-          <Button onClick={() => setOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Tambah Pendaftar
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Tambah Pendaftar
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 flex items-center gap-2">
+            <label htmlFor="academic-year-filter" className="text-sm font-medium">Filter Tahun Ajaran:</label>
+            <Select value={academicYearFilter} onValueChange={setAcademicYearFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Pilih tahun ajaran" />
+              </SelectTrigger>
+              <SelectContent>
+                {academicYears.map(year => (
+                  <SelectItem key={year} value={year}>
+                    {year === 'all' ? 'Semua Tahun' : year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -122,7 +159,7 @@ export default function AdmissionsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedApplicants.map((applicant) => (
+              {paginatedApplicants.length > 0 ? paginatedApplicants.map((applicant) => (
                 <TableRow key={applicant.id}>
                   <TableCell className="font-medium">{applicant.name}</TableCell>
                   <TableCell>{calculateAge(applicant.birthDate)}</TableCell>
@@ -158,20 +195,26 @@ export default function AdmissionsPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                 <TableRow>
+                    <TableCell colSpan={8} className="text-center h-24">
+                        Tidak ada pendaftar yang cocok dengan filter yang dipilih.
+                    </TableCell>
+                  </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
         <CardFooter className="flex items-center justify-between pt-6">
           <div className="text-sm text-muted-foreground">
-            Halaman {currentPage} dari {totalPages}
+            {filteredApplicants.length > 0 ? `Halaman ${currentPage} dari ${totalPages}` : "Tidak ada data"}
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || filteredApplicants.length === 0}
             >
               Sebelumnya
             </Button>
@@ -179,7 +222,7 @@ export default function AdmissionsPage() {
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || filteredApplicants.length === 0}
             >
               Berikutnya
             </Button>
@@ -200,5 +243,3 @@ export default function AdmissionsPage() {
     </>
   );
 }
-
-    
