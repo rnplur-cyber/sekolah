@@ -24,6 +24,7 @@ import {
   teachers,
   classes,
   teachingJournals,
+  subjects,
   type TeachingJournal,
 } from "@/lib/data";
 import { ArrowLeft, PlusCircle } from "lucide-react";
@@ -64,6 +65,7 @@ export default function TeacherJournalPage() {
     notFound();
   }
   
+  const subject = subjects.find(s => s.id === teacher.subjectId);
   const journals = getJournalsByTeacherId(teacher.id);
   const taughtClasses = classes.filter(c => teacher.taughtClassIds.includes(c.id));
 
@@ -88,7 +90,7 @@ export default function TeacherJournalPage() {
                 </Avatar>
                 <div>
                     <h1 className="text-2xl font-bold">{teacher.name}</h1>
-                    <p className="text-muted-foreground">{teacher.subject}</p>
+                    <p className="text-muted-foreground">{subject?.name || "N/A"}</p>
                 </div>
             </div>
         </div>

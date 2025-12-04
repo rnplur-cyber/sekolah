@@ -16,12 +16,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { classes } from "@/lib/data";
+import { classes, subjects } from "@/lib/data";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   nip: z.string().regex(/^\d+$/, "NIP must be a number.").min(10, "NIP must be at least 10 digits."),
-  subject: z.string().min(3, "Subject must be at least 3 characters."),
+  subjectId: z.string().nonempty("Please select a subject."),
   taughtClassIds: z.array(z.string()).refine(value => value.some(item => item), {
     message: "You have to select at least one class.",
   }),
@@ -40,7 +41,7 @@ export function TeacherForm({ onSuccess }: TeacherFormProps) {
     defaultValues: {
       name: "",
       nip: "",
-      subject: "",
+      subjectId: "",
       taughtClassIds: [],
     },
   });
@@ -85,13 +86,24 @@ export function TeacherForm({ onSuccess }: TeacherFormProps) {
         />
         <FormField
           control={form.control}
-          name="subject"
+          name="subjectId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Subject</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Mathematics" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a subject" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {subjects.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

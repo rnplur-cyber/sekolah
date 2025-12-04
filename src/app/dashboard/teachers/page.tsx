@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { teachers, classes } from "@/lib/data";
+import { teachers, classes, subjects } from "@/lib/data";
 import { PlusCircle, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -84,45 +84,48 @@ export default function TeachersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedTeachers.map((teacher) => (
-                <TableRow key={teacher.id}>
-                  <TableCell>
-                    <Avatar>
-                      <AvatarImage
-                        src={teacher.avatarUrl}
-                        alt={teacher.name}
-                        data-ai-hint={teacher.avatarHint}
-                      />
-                      <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell className="font-medium">{teacher.name}</TableCell>
-                  <TableCell>{teacher.nip}</TableCell>
-                  <TableCell>{teacher.subject}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {teacher.taughtClassIds.map((classId) => {
-                        const taughtClass = classes.find(
-                          (c) => c.id === classId
-                        );
-                        return taughtClass ? (
-                          <Badge variant="secondary" key={classId}>
-                            {taughtClass.name}
-                          </Badge>
-                        ) : null;
-                      })}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/dashboard/teachers/${teacher.id}`}>
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        Lihat Jurnal
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {paginatedTeachers.map((teacher) => {
+                const subject = subjects.find(s => s.id === teacher.subjectId);
+                return (
+                    <TableRow key={teacher.id}>
+                    <TableCell>
+                        <Avatar>
+                        <AvatarImage
+                            src={teacher.avatarUrl}
+                            alt={teacher.name}
+                            data-ai-hint={teacher.avatarHint}
+                        />
+                        <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                    </TableCell>
+                    <TableCell className="font-medium">{teacher.name}</TableCell>
+                    <TableCell>{teacher.nip}</TableCell>
+                    <TableCell>{subject?.name || "N/A"}</TableCell>
+                    <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                        {teacher.taughtClassIds.map((classId) => {
+                            const taughtClass = classes.find(
+                            (c) => c.id === classId
+                            );
+                            return taughtClass ? (
+                            <Badge variant="secondary" key={classId}>
+                                {taughtClass.name}
+                            </Badge>
+                            ) : null;
+                        })}
+                        </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Button variant="outline" size="sm" asChild>
+                        <Link href={`/dashboard/teachers/${teacher.id}`}>
+                            <BookOpen className="mr-2 h-4 w-4" />
+                            Lihat Jurnal
+                        </Link>
+                        </Button>
+                    </TableCell>
+                    </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>
