@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, MoreHorizontal } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   classes,
@@ -37,6 +53,7 @@ import {
   type DayOfWeek,
 } from "@/lib/data";
 import { ScheduleForm } from "./_components/schedule-form";
+import { useToast } from "@/hooks/use-toast";
 
 function getSubjectById(id: string) {
   return subjects.find((s) => s.id === id);
@@ -50,10 +67,11 @@ const daysOfWeek: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "
 
 export default function SchedulesPage() {
   const [open, setOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const { toast } = useToast();
 
   const handleSuccess = () => {
-    // In a real app, you'd refetch the data here.
-    // For now, we just close the dialog.
     setOpen(false);
   };
 
@@ -61,6 +79,23 @@ export default function SchedulesPage() {
     return schedules
       .filter((s) => s.classId === classId && s.day === day)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  };
+
+  const handleDeleteClick = (schedule: Schedule) => {
+    setSelectedSchedule(schedule);
+    setIsAlertOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (selectedSchedule) {
+      console.log("Deleting schedule:", selectedSchedule.id);
+      toast({
+        title: "Schedule Deleted",
+        description: `Schedule entry has been deleted.`,
+      });
+    }
+    setIsAlertOpen(false);
+    setSelectedSchedule(null);
   };
 
   return (
@@ -98,9 +133,10 @@ export default function SchedulesPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="w-[25%]">Time</TableHead>
-                            <TableHead className="w-[40%]">Subject</TableHead>
+                            <TableHead className="w-[20%]">Time</TableHead>
+                            <TableHead className="w-[35%]">Subject</TableHead>
                             <TableHead className="w-[35%]">Teacher</TableHead>
+                            <TableHead className="w-[10%] text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -115,13 +151,28 @@ export default function SchedulesPage() {
                                   </TableCell>
                                   <TableCell>{subject?.name || "N/A"}</TableCell>
                                   <TableCell>{teacher?.name || "N/A"}</TableCell>
+                                  <TableCell className="text-right">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                          <span className="sr-only">Open menu</span>
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleDeleteClick(schedule)}>
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </TableCell>
                                 </TableRow>
                               );
                             })
                           ) : (
                             <TableRow>
                               <TableCell
-                                colSpan={3}
+                                colSpan={4}
                                 className="text-center h-24"
                               >
                                 No schedule for {day}.
@@ -149,6 +200,20 @@ export default function SchedulesPage() {
           <ScheduleForm onSuccess={handleSuccess} />
         </DialogContent>
       </Dialog>
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the schedule entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

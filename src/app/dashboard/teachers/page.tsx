@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { teachers, classes, subjects } from "@/lib/data";
-import { PlusCircle, BookOpen } from "lucide-react";
+import { teachers, classes, subjects, type Teacher } from "@/lib/data";
+import { PlusCircle, BookOpen, MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -30,15 +30,35 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TeacherForm } from "./_components/teacher-form";
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 const ITEMS_PER_PAGE = 5;
 
 export default function TeachersPage() {
   const [open, setOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast();
 
   const totalPages = Math.ceil(teachers.length / ITEMS_PER_PAGE);
 
@@ -49,9 +69,32 @@ export default function TeachersPage() {
   }, [currentPage]);
 
   const handleSuccess = () => {
-    // In a real app, you'd refetch the data here.
-    // For now, we just close the dialog.
     setOpen(false);
+  };
+
+  const handleDeleteClick = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setIsAlertOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (selectedTeacher) {
+      console.log("Deleting teacher:", selectedTeacher.id);
+      toast({
+        title: "Teacher Deleted",
+        description: `Teacher "${selectedTeacher.name}" has been deleted.`,
+      });
+    }
+    setIsAlertOpen(false);
+    setSelectedTeacher(null);
+  };
+  
+  const handleEditClick = (teacher: Teacher) => {
+    console.log("Editing teacher:", teacher.id);
+     toast({
+        title: "Edit Action",
+        description: `Editing "${teacher.name}". (UI not implemented)`,
+      });
   };
   
   return (
@@ -80,7 +123,7 @@ export default function TeachersPage() {
                 <TableHead>NIP</TableHead>
                 <TableHead>Subject</TableHead>
                 <TableHead>Classes Taught</TableHead>
-                <TableHead className="text-right">Jurnal Mengajar</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -116,12 +159,30 @@ export default function TeachersPage() {
                         </div>
                     </TableCell>
                     <TableCell className="text-right">
-                        <Button variant="outline" size="sm" asChild>
-                        <Link href={`/dashboard/teachers/${teacher.id}`}>
-                            <BookOpen className="mr-2 h-4 w-4" />
-                            Lihat Jurnal
-                        </Link>
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={`/dashboard/teachers/${teacher.id}`}>
+                                    <BookOpen className="mr-2 h-4 w-4" />
+                                    Jurnal
+                                </Link>
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditClick(teacher)}>
+                                    Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDeleteClick(teacher)}>
+                                    Delete
+                                </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </TableCell>
                     </TableRow>
                 )
@@ -164,6 +225,21 @@ export default function TeachersPage() {
           <TeacherForm onSuccess={handleSuccess} />
         </DialogContent>
       </Dialog>
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the teacher
+              "{selectedTeacher?.name}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

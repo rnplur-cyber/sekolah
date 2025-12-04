@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { students, classes } from "@/lib/data";
-import { PlusCircle } from "lucide-react";
+import { students, classes, type Student } from "@/lib/data";
+import { PlusCircle, MoreHorizontal } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,8 +30,25 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { StudentForm } from "./_components/student-form";
 import { useState, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 function getClassById(id: string) {
   return classes.find((c) => c.id === id);
@@ -41,7 +58,10 @@ const ITEMS_PER_PAGE = 5;
 
 export default function StudentsPage() {
   const [open, setOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast();
 
   const totalPages = Math.ceil(students.length / ITEMS_PER_PAGE);
 
@@ -52,9 +72,32 @@ export default function StudentsPage() {
   }, [currentPage]);
 
   const handleSuccess = () => {
-    // In a real app, you'd refetch the data here.
-    // For now, we just close the dialog.
     setOpen(false);
+  };
+
+  const handleDeleteClick = (student: Student) => {
+    setSelectedStudent(student);
+    setIsAlertOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (selectedStudent) {
+      console.log("Deleting student:", selectedStudent.id);
+      toast({
+        title: "Student Deleted",
+        description: `Student "${selectedStudent.name}" has been deleted.`,
+      });
+    }
+    setIsAlertOpen(false);
+    setSelectedStudent(null);
+  };
+  
+  const handleEditClick = (student: Student) => {
+    console.log("Editing student:", student.id);
+     toast({
+        title: "Edit Action",
+        description: `Editing "${student.name}". (UI not implemented)`,
+      });
   };
   
   return (
@@ -68,7 +111,7 @@ export default function StudentsPage() {
             </CardDescription>
           </div>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => setOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Student
             </Button>
@@ -82,6 +125,7 @@ export default function StudentsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Student ID</TableHead>
                 <TableHead>Class</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -104,6 +148,24 @@ export default function StudentsPage() {
                     <TableCell className="font-medium">{student.name}</TableCell>
                     <TableCell>{student.id}</TableCell>
                     <TableCell>{studentClass?.name || "N/A"}</TableCell>
+                    <TableCell className="text-right">
+                       <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditClick(student)}>
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteClick(student)}>
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -145,6 +207,21 @@ export default function StudentsPage() {
           <StudentForm onSuccess={handleSuccess} />
         </DialogContent>
       </Dialog>
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the student
+              "{selectedStudent?.name}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
