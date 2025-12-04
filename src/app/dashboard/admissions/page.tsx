@@ -1,13 +1,14 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -47,10 +48,22 @@ function getStatusVariant(
   return "destructive";
 }
 
+const ITEMS_PER_PAGE = 5;
+
 export default function AdmissionsPage() {
   const [open, setOpen] = useState(false);
   const [applicants, setApplicants] = useState<NewStudentApplicant[]>(newStudentApplicants);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+
+  const totalPages = Math.ceil(applicants.length / ITEMS_PER_PAGE);
+
+  const paginatedApplicants = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return applicants.slice(startIndex, endIndex);
+  }, [currentPage, applicants]);
+
 
   const handleSuccess = () => {
     // In a real app, you'd refetch the data here.
@@ -99,7 +112,7 @@ export default function AdmissionsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {applicants.map((applicant) => (
+              {paginatedApplicants.map((applicant) => (
                 <TableRow key={applicant.id}>
                   <TableCell className="font-medium">{applicant.name}</TableCell>
                   <TableCell>{applicant.previousSchool}</TableCell>
@@ -136,6 +149,29 @@ export default function AdmissionsPage() {
             </TableBody>
           </Table>
         </CardContent>
+        <CardFooter className="flex items-center justify-between pt-6">
+          <div className="text-sm text-muted-foreground">
+            Showing page {currentPage} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </CardFooter>
       </Card>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

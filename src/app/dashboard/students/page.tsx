@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -30,14 +31,25 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { StudentForm } from "./_components/student-form";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 function getClassById(id: string) {
   return classes.find((c) => c.id === id);
 }
 
+const ITEMS_PER_PAGE = 5;
+
 export default function StudentsPage() {
   const [open, setOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(students.length / ITEMS_PER_PAGE);
+
+  const paginatedStudents = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return students.slice(startIndex, endIndex);
+  }, [currentPage]);
 
   const handleSuccess = () => {
     // In a real app, you'd refetch the data here.
@@ -73,7 +85,7 @@ export default function StudentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((student) => {
+              {paginatedStudents.map((student) => {
                 const studentClass = getClassById(student.classId);
                 return (
                   <TableRow key={student.id}>
@@ -98,16 +110,41 @@ export default function StudentsPage() {
             </TableBody>
           </Table>
         </CardContent>
+        <CardFooter className="flex items-center justify-between pt-6">
+          <div className="text-sm text-muted-foreground">
+            Showing page {currentPage} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </CardFooter>
       </Card>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add New Student</DialogTitle>
-          <DialogDescription>
-            Fill out the form below to register a new student.
-          </DialogDescription>
-        </DialogHeader>
-        <StudentForm onSuccess={handleSuccess} />
-      </DialogContent>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Student</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to register a new student.
+            </DialogDescription>
+          </DialogHeader>
+          <StudentForm onSuccess={handleSuccess} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

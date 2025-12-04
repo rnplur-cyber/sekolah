@@ -52,7 +52,7 @@ export default function ClassesPage() {
             <CardDescription>View and manage all classes.</CardDescription>
           </div>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => setOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Class
             </Button>
@@ -84,15 +84,17 @@ export default function ClassesPage() {
           </Table>
         </CardContent>
       </Card>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add New Class</DialogTitle>
-          <DialogDescription>
-            Fill out the form below to create a new class.
-          </DialogDescription>
-        </DialogHeader>
-        <ClassForm onSuccess={handleSuccess} />
-      </DialogContent>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Class</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to create a new class.
+            </DialogDescription>
+          </DialogHeader>
+          <ClassForm onSuccess={handleSuccess} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
