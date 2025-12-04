@@ -29,7 +29,7 @@ import {
   subjects,
   type TeachingJournal,
 } from "@/lib/data";
-import { ArrowLeft, PlusCircle, MoreHorizontal, Search } from "lucide-react";
+import { ArrowLeft, PlusCircle, MoreHorizontal, Search, File as FileIcon } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import {
@@ -190,6 +190,7 @@ export default function TeacherJournalPage() {
                   <TableHead>Kelas</TableHead>
                   <TableHead>Materi Pelajaran</TableHead>
                   <TableHead>Catatan</TableHead>
+                  <TableHead>Materi</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -205,6 +206,16 @@ export default function TeacherJournalPage() {
                           {journal.subjectMatter}
                         </TableCell>
                         <TableCell>{journal.notes}</TableCell>
+                        <TableCell>
+                          {journal.materialFile ? (
+                            <div className="flex items-center gap-2">
+                                <FileIcon className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm truncate">{journal.materialFile}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -228,7 +239,7 @@ export default function TeacherJournalPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                       {searchTerm ? "Tidak ada jurnal yang cocok dengan pencarian Anda." : "Belum ada entri jurnal."}
                     </TableCell>
                   </TableRow>

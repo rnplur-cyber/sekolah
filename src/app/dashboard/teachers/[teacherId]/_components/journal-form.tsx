@@ -29,6 +29,7 @@ const formSchema = z.object({
   classId: z.string().nonempty("Silakan pilih kelas."),
   subjectMatter: z.string().min(3, "Materi pelajaran minimal harus 3 karakter."),
   notes: z.string().optional(),
+  materialFile: z.any().optional(),
 });
 
 type JournalFormValues = z.infer<typeof formSchema>;
@@ -50,18 +51,24 @@ export function JournalForm({ teacher, taughtClasses, onSuccess, existingJournal
       classId: existingJournal?.classId || "",
       subjectMatter: existingJournal?.subjectMatter || "",
       notes: existingJournal?.notes || "",
+      materialFile: undefined,
     },
   });
 
   const onSubmit = (values: JournalFormValues) => {
+     const submissionData = {
+      ...values,
+      materialFile: values.materialFile?.[0]?.name || existingJournal?.materialFile || undefined,
+    };
+
     if (isEditMode) {
-      console.log("Memperbarui Entri Jurnal:", { ...existingJournal, ...values });
+      console.log("Memperbarui Entri Jurnal:", { ...existingJournal, ...submissionData });
       toast({
         title: "Entri Jurnal Diperbarui",
         description: `Entri untuk kelas ${taughtClasses.find(c => c.id === values.classId)?.name} telah diperbarui.`,
       });
     } else {
-      console.log("Entri Jurnal Baru:", { ...values, teacherId: teacher.id, date: new Date() });
+      console.log("Entri Jurnal Baru:", { ...submissionData, teacherId: teacher.id, date: new Date() });
       toast({
         title: "Entri Jurnal Ditambahkan",
         description: `Entri baru untuk kelas ${taughtClasses.find(c => c.id === values.classId)?.name} telah disimpan.`,
@@ -69,6 +76,8 @@ export function JournalForm({ teacher, taughtClasses, onSuccess, existingJournal
     }
     onSuccess();
   };
+  
+  const fileRef = form.register("materialFile");
 
   return (
     <Form {...form}>
@@ -122,6 +131,24 @@ export function JournalForm({ teacher, taughtClasses, onSuccess, existingJournal
                   {...field}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="materialFile"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Unggah Materi (Opsional)</FormLabel>
+              <FormControl>
+                <Input type="file" {...fileRef} />
+              </FormControl>
+              {existingJournal?.materialFile && !field.value?.length && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    File saat ini: {existingJournal.materialFile}
+                  </p>
+              )}
               <FormMessage />
             </FormItem>
           )}

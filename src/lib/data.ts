@@ -82,6 +82,7 @@ export type TeachingJournal = {
   date: Date;
   subjectMatter: string;
   notes: string;
+  materialFile?: string;
 };
 
 export type Subject = {
@@ -189,9 +190,9 @@ export const newStudentApplicants: NewStudentApplicant[] = [
 ];
 
 export const teachingJournals: TeachingJournal[] = [
-    { id: "JNL-001", teacherId: "TCH-001", classId: "CLS-001", date: subDays(today, 1), subjectMatter: "Ekspresi Aljabar", notes: "Siswa kesulitan dalam faktorisasi." },
+    { id: "JNL-001", teacherId: "TCH-001", classId: "CLS-001", date: subDays(today, 1), subjectMatter: "Ekspresi Aljabar", notes: "Siswa kesulitan dalam faktorisasi.", materialFile: "latihan-faktorisasi.pdf" },
     { id: "JNL-002", teacherId: "TCH-001", classId: "CLS-003", date: subDays(today, 1), subjectMatter: "Persamaan Linear", notes: "Sebagian besar siswa memahami konsep dengan baik." },
-    { id: "JNL-003", teacherId: "TCH-002", classId: "CLS-002", date: subDays(today, 2), subjectMatter: "Hukum Gerak Newton", notes: "Contoh praktis membantu pemahaman." },
+    { id: "JNL-003", teacherId: "TCH-002", classId: "CLS-002", date: subDays(today, 2), subjectMatter: "Hukum Gerak Newton", notes: "Contoh praktis membantu pemahaman.", materialFile: "simulasi-newton.zip" },
     { id: "JNL-004", teacherId: "TCH-003", classId: "CLS-001", date: subDays(today, 3), subjectMatter: "Menganalisis Puisi", notes: "Membahas makna di balik 'Hujan Bulan Juni'." },
     { id: "JNL-005", teacherId: "TCH-004", classId: "CLS-004", date: subDays(today, 1), subjectMatter: "Pengenalan HTML", notes: "Siswa membuat halaman web pertama mereka." },
 ];
@@ -209,5 +210,3 @@ export const schedules: Schedule[] = [
     // Class 11-A
     { id: "SCH-006", classId: "CLS-003", subjectId: "SUB-001", teacherId: "TCH-001", day: "Wednesday", startTime: "07:30", endTime: "09:00" },
 ];
-
-    
