@@ -49,6 +49,16 @@ function getStatusVariant(
 
 const ITEMS_PER_PAGE = 5;
 
+function calculateAge(birthDate: Date): number {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
 export default function AdmissionsPage() {
   const [open, setOpen] = useState(false);
   const [applicants, setApplicants] = useState<NewStudentApplicant[]>(newStudentApplicants);
@@ -102,6 +112,7 @@ export default function AdmissionsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nama Pendaftar</TableHead>
+                <TableHead>Umur</TableHead>
                 <TableHead>Sekolah Asal</TableHead>
                 <TableHead>Jenis Kelamin</TableHead>
                 <TableHead>Alamat</TableHead>
@@ -114,6 +125,7 @@ export default function AdmissionsPage() {
               {paginatedApplicants.map((applicant) => (
                 <TableRow key={applicant.id}>
                   <TableCell className="font-medium">{applicant.name}</TableCell>
+                  <TableCell>{calculateAge(applicant.birthDate)}</TableCell>
                   <TableCell>{applicant.previousSchool}</TableCell>
                   <TableCell>{applicant.gender}</TableCell>
                   <TableCell className="max-w-[200px] truncate">{applicant.address}</TableCell>
@@ -188,5 +200,3 @@ export default function AdmissionsPage() {
     </>
   );
 }
-
-    
