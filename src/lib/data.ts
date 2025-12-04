@@ -1,4 +1,6 @@
 import { PlaceHolderImages } from "./placeholder-images";
+import { subDays } from "date-fns";
+
 
 export type Student = {
   id: string;
@@ -52,6 +54,18 @@ export type EmployeeAttendanceRecord = {
   employeeId: string;
   timestamp: Date;
   status: "Present" | "Late" | "Absent";
+};
+
+export type AdmissionStatus = "Pending" | "Accepted" | "Rejected";
+
+export type NewStudentApplicant = {
+  id: string;
+  name: string;
+  previousSchool: string;
+  registrationDate: Date;
+  status: AdmissionStatus;
+  parentName: string;
+  contact: string;
 };
 
 
@@ -121,4 +135,11 @@ export const teacherAttendanceRecords: TeacherAttendanceRecord[] = [
 export const employeeAttendanceRecords: EmployeeAttendanceRecord[] = [
     { id: "EREC-001", employeeId: "EMP-001", timestamp: getRandomTime(today, 8, 9), status: "Present" },
     { id: "EREC-002", employeeId: "EMP-002", timestamp: getRandomTime(today, 8, 9), status: "Present" },
+];
+
+export const newStudentApplicants: NewStudentApplicant[] = [
+  { id: "APP-001", name: "Indah Permatasari", previousSchool: "SMPN 1 Jakarta", registrationDate: subDays(today, 5), status: "Pending", parentName: "Haryono", contact: "081234567890" },
+  { id: "APP-002", name: "Rizky Alamsyah", previousSchool: "SMP Bintang Harapan", registrationDate: subDays(today, 3), status: "Pending", parentName: "Susanti", contact: "081234567891" },
+  { id: "APP-003", name: "Putri Anggraini", previousSchool: "SMP Cipta Karya", registrationDate: subDays(today, 10), status: "Accepted", parentName: "Budiarto", contact: "081234567892" },
+  { id: "APP-004", name: "Doni Saputra", previousSchool: "SMPN 5 Bandung", registrationDate: subDays(today, 15), status: "Rejected", parentName: "Sari", contact: "081234567893" },
 ];

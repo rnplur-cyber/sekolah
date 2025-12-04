@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ScanLine, Users, UserSquare, School, BookText } from "lucide-react";
+import { LayoutDashboard, ScanLine, Users, UserSquare, School, BookText, UserPlus } from "lucide-react";
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -20,6 +20,11 @@ const navItems = [
     href: "/dashboard/scan",
     label: "Scan Attendance",
     icon: ScanLine,
+  },
+  {
+    href: "/dashboard/admissions",
+    label: "Admissions",
+    icon: UserPlus,
   },
   {
     href: "/dashboard/students",
