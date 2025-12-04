@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import {
@@ -67,12 +67,19 @@ function getStatusVariant(
 
 export default function ReportPage() {
   const [classId, setClassId] = useState("all");
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: new Date(new Date().setDate(new Date().getDate() - 7)),
-    to: new Date(),
-  });
+  const [date, setDate] = useState<DateRange | undefined>(undefined);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    setDate({
+      from: new Date(new Date().setDate(new Date().getDate() - 7)),
+      to: new Date(),
+    });
+  }, []);
 
   const filteredStudentRecords = useMemo(() => {
+    if (!isClient) return [];
     return attendanceRecords.filter((record) => {
       const recordDate = new Date(record.timestamp);
       const student = getStudentById(record.studentId);
@@ -85,9 +92,10 @@ export default function ReportPage() {
 
       return isClassMatch && isDateMatch;
     });
-  }, [classId, date]);
+  }, [classId, date, isClient]);
 
   const filteredTeacherRecords = useMemo(() => {
+    if (!isClient) return [];
     return teacherAttendanceRecords.filter((record) => {
       const recordDate = new Date(record.timestamp);
       const isDateMatch = date?.from && date?.to 
@@ -95,9 +103,10 @@ export default function ReportPage() {
         : true;
       return isDateMatch;
     });
-  }, [date]);
+  }, [date, isClient]);
 
   const filteredEmployeeRecords = useMemo(() => {
+    if (!isClient) return [];
     return employeeAttendanceRecords.filter((record) => {
       const recordDate = new Date(record.timestamp);
       const isDateMatch = date?.from && date?.to 
@@ -105,7 +114,11 @@ export default function ReportPage() {
         : true;
       return isDateMatch;
     });
-  }, [date]);
+  }, [date, isClient]);
+
+  if (!isClient) {
+    return null; // or a loading skeleton
+  }
 
   return (
     <Card>
@@ -340,3 +353,5 @@ export default function ReportPage() {
     </Card>
   );
 }
+
+    
