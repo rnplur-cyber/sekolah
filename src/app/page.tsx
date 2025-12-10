@@ -18,8 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("admin@sekolah.com");
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -88,7 +88,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@sekolah.com"
+                placeholder="pengguna@sekolah.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -106,6 +106,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+                placeholder="Password"
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
