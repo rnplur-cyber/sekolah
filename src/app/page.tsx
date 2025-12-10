@@ -63,12 +63,12 @@ export default function LoginPage() {
     <div className="w-full lg:grid lg:min-h-[100vh] lg:grid-cols-2 xl:min-h-[100vh]">
       <div className="hidden bg-muted lg:block">
         <Image
-          src="https://images.unsplash.com/photo-1529390079861-591de354faf5?q=80&w=2070&auto=format&fit=crop"
-          alt="Anak-anak di dalam kelas"
+          src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?q=80&w=2070&auto=format&fit=crop"
+          alt="Gedung sekolah"
           width="1920"
           height="1080"
           className="h-full w-full object-cover dark:brightness-[0.7]"
-          data-ai-hint="children classroom"
+          data-ai-hint="school building"
         />
       </div>
       <div className="flex items-center justify-center py-12">
