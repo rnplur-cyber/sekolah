@@ -25,9 +25,11 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json({ message: 'Email dan password harus diisi.' }, { status: 400 });
     }
-     if (role === 'teacher' && !teacherId) {
-      return NextResponse.json({ message: 'Guru terkait harus dipilih untuk peran teacher.' }, { status: 400 });
-    }
+     // On registration, teacherId might not be available, so we don't validate it here.
+     // It can be assigned later in the user management page.
+     if (role === 'teacher' && !teacherId && req.url.includes('/api/users')) {
+        // This validation can be more specific for backend-only operations if needed
+     }
 
     // Check for existing email
     const [existing]:any = await db.execute('SELECT id FROM users WHERE email = ?', [email]);
@@ -38,9 +40,10 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = `USR-${nanoid()}`;
 
+    // Insert with teacherId as null if not provided
     await db.execute(
       'INSERT INTO users (id, email, password, role, teacherId) VALUES (?, ?, ?, ?, ?)',
-      [userId, email, hashedPassword, role, role === 'teacher' ? teacherId : null]
+      [userId, email, hashedPassword, role, teacherId || null]
     );
 
     return NextResponse.json({ message: 'Pengguna berhasil dibuat.', userId }, { status: 201 });

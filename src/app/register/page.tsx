@@ -13,16 +13,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { teachers } from "@/lib/data";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [teacherId, setTeacherId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -31,23 +28,13 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const role = "teacher";
-
-     if (role === 'teacher' && !teacherId) {
-      toast({
-        variant: "destructive",
-        title: "Pendaftaran Gagal",
-        description: "Silakan pilih guru yang terkait.",
-      });
-      setIsLoading(false);
-      return;
-    }
+    const role = "teacher"; // Default role
 
     try {
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role, teacherId }),
+        body: JSON.stringify({ email, password, role }), // teacherId is no longer sent
       });
 
       const data = await response.json();
@@ -112,22 +99,6 @@ export default function RegisterPage() {
               />
             </div>
             
-            <div className="grid gap-2">
-                <Label htmlFor="teacherId">Guru Terkait</Label>
-                <Select value={teacherId} onValueChange={setTeacherId}>
-                    <SelectTrigger id="teacherId">
-                        <SelectValue placeholder="Pilih guru" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {teachers.map((teacher) => (
-                        <SelectItem key={teacher.id} value={teacher.id}>
-                        {teacher.name}
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
-            </div>
-
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Memproses...' : 'Daftar'}
             </Button>
