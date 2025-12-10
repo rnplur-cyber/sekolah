@@ -20,10 +20,10 @@ export async function GET(req: NextRequest) {
 // CREATE a new user
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, role, teacherId } = await req.json();
+    const { email, password, role = 'teacher', teacherId } = await req.json();
 
-    if (!email || !password || !role) {
-      return NextResponse.json({ message: 'Email, password, dan peran harus diisi.' }, { status: 400 });
+    if (!email || !password) {
+      return NextResponse.json({ message: 'Email dan password harus diisi.' }, { status: 400 });
     }
      if (role === 'teacher' && !teacherId) {
       return NextResponse.json({ message: 'Guru terkait harus dipilih untuk peran teacher.' }, { status: 400 });

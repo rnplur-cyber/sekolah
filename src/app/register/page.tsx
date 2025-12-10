@@ -22,7 +22,6 @@ import { teachers } from "@/lib/data";
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"admin" | "teacher" | undefined>();
   const [teacherId, setTeacherId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -32,15 +31,8 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!role) {
-      toast({
-        variant: "destructive",
-        title: "Pendaftaran Gagal",
-        description: "Silakan pilih peran terlebih dahulu.",
-      });
-      setIsLoading(false);
-      return;
-    }
+    const role = "teacher";
+
      if (role === 'teacher' && !teacherId) {
       toast({
         variant: "destructive",
@@ -55,7 +47,7 @@ export default function RegisterPage() {
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role, teacherId: role === 'teacher' ? teacherId : null }),
+        body: JSON.stringify({ email, password, role, teacherId }),
       });
 
       const data = await response.json();
@@ -119,36 +111,22 @@ export default function RegisterPage() {
                 disabled={isLoading}
               />
             </div>
-             <div className="grid gap-2">
-                <Label htmlFor="role">Peran</Label>
-                <Select value={role} onValueChange={(value) => setRole(value as any)}>
-                    <SelectTrigger id="role">
-                        <SelectValue placeholder="Pilih peran pengguna" />
+            
+            <div className="grid gap-2">
+                <Label htmlFor="teacherId">Guru Terkait</Label>
+                <Select value={teacherId} onValueChange={setTeacherId}>
+                    <SelectTrigger id="teacherId">
+                        <SelectValue placeholder="Pilih guru" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="teacher">Teacher</SelectItem>
+                    {teachers.map((teacher) => (
+                        <SelectItem key={teacher.id} value={teacher.id}>
+                        {teacher.name}
+                        </SelectItem>
+                    ))}
                     </SelectContent>
                 </Select>
             </div>
-
-            {role === 'teacher' && (
-                <div className="grid gap-2">
-                    <Label htmlFor="teacherId">Guru Terkait</Label>
-                    <Select value={teacherId} onValueChange={setTeacherId}>
-                        <SelectTrigger id="teacherId">
-                            <SelectValue placeholder="Pilih guru" />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {teachers.map((teacher) => (
-                            <SelectItem key={teacher.id} value={teacher.id}>
-                            {teacher.name}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Memproses...' : 'Daftar'}
