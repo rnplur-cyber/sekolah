@@ -154,7 +154,7 @@ export default function SubjectsPage() {
           </div>
            <Button onClick={() => setOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Tambah Mata Pelajaran
+            Tambah
           </Button>
         </CardHeader>
         <CardContent>
