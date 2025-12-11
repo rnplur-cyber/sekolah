@@ -50,7 +50,7 @@ export function ClassForm({ onSuccess }: ClassFormProps) {
         try {
             const response = await fetch('/api/teachers');
             const data = await response.json();
-            setTeachers(data.teachers);
+            setTeachers(data.teachers || []);
         } catch (error) {
             toast({
                 variant: 'destructive',
