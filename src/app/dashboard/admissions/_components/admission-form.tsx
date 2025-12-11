@@ -252,5 +252,3 @@ export function AdmissionForm({ onSuccess }: AdmissionFormProps) {
     </Form>
   );
 }
-
-    
