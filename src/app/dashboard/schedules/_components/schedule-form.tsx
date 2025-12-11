@@ -21,8 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { classes, subjects, teachers, type DayOfWeek } from "@/lib/data";
+import { type DayOfWeek, type Teacher, type Subject, type Class } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const daysOfWeek: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const daysOfWeekIndonesian: { [key in DayOfWeek]: string } = {
@@ -51,6 +53,39 @@ interface ScheduleFormProps {
 
 export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        const [classesRes, subjectsRes, teachersRes] = await Promise.all([
+          fetch('/api/classes'),
+          fetch('/api/subjects'),
+          fetch('/api/teachers')
+        ]);
+        
+        const classesData = await classesRes.json();
+        const subjectsData = await subjectsRes.json();
+        const teachersData = await teachersRes.json();
+
+        setClasses(classesData.classes || []);
+        setSubjects(subjectsData.subjects || []);
+        setTeachers(teachersData.teachers || []);
+
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Gagal memuat data untuk form jadwal.' });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, [toast]);
+
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,13 +99,25 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
   });
 
   const onSubmit = (values: ScheduleFormValues) => {
+    // API submission logic would go here
     console.log("Data Jadwal Baru:", values);
     toast({
       title: "Jadwal Ditambahkan",
-      description: `Jadwal baru telah berhasil dibuat.`,
+      description: `Jadwal baru telah berhasil dibuat. (Simulasi)`,
     });
     onSuccess();
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {Array.from({length: 6}).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+        <div className="flex justify-end pt-4">
+          <Skeleton className="h-10 w-28" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Form {...form}>

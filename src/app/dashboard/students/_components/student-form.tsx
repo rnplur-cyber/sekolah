@@ -21,8 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { classes } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+type Class = { id: string, name: string };
 
 const formSchema = z.object({
   name: z.string().min(2, "Nama minimal harus 2 karakter."),
@@ -37,6 +40,27 @@ interface StudentFormProps {
 
 export function StudentForm({ onSuccess }: StudentFormProps) {
   const { toast } = useToast();
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/classes');
+            if (!res.ok) throw new Error("Gagal memuat data kelas");
+            const data = await res.json();
+            setClasses(data.classes);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchClasses();
+  }, [toast]);
+
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -45,17 +69,41 @@ export function StudentForm({ onSuccess }: StudentFormProps) {
     },
   });
 
-  const onSubmit = (values: StudentFormValues) => {
-    // In a real app, you would handle form submission here,
-    // e.g., send the data to your server.
-    console.log("Data Siswa Baru:", values);
-    toast({
-        title: "Siswa Ditambahkan",
-        description: `${values.name} telah berhasil terdaftar.`,
-    });
-    // For now, we just call the success callback.
-    onSuccess();
+  const onSubmit = async (values: StudentFormValues) => {
+    setIsSubmitting(true);
+    try {
+        const res = await fetch('/api/students', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(values),
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.message || "Gagal menambahkan siswa.");
+        }
+        toast({
+            title: "Siswa Ditambahkan",
+            description: `${values.name} telah berhasil terdaftar.`,
+        });
+        onSuccess();
+    } catch(error: any) {
+        toast({ variant: 'destructive', title: 'Gagal', description: error.message });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
+
+  if (isLoading) {
+      return (
+          <div className="space-y-8">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <div className="flex justify-end">
+                <Skeleton className="h-10 w-28" />
+              </div>
+          </div>
+      )
+  }
 
   return (
     <Form {...form}>
@@ -98,7 +146,7 @@ export function StudentForm({ onSuccess }: StudentFormProps) {
           )}
         />
         <div className="flex justify-end">
-          <Button type="submit">Tambah Siswa</Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : 'Tambah Siswa'}</Button>
         </div>
       </form>
     </Form>

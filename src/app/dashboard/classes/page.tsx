@@ -18,7 +18,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { classes, teachers, type Class } from "@/lib/data";
 import { PlusCircle, MoreHorizontal } from "lucide-react";
 import {
   Dialog,
@@ -26,7 +25,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -45,21 +43,52 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ClassForm } from "./_components/class-form";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
-function getTeacherById(id: string) {
-  return teachers.find((t) => t.id === id);
-}
+export type Class = {
+  id: string;
+  name: string;
+  walikelasId: string;
+  walikelasName: string;
+  studentCount: number;
+};
 
 const ITEMS_PER_PAGE = 5;
 
 export default function ClassesPage() {
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+
+  const fetchClasses = async () => {
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/classes');
+        if (!response.ok) {
+            throw new Error('Gagal memuat data kelas.');
+        }
+        const data = await response.json();
+        setClasses(data.classes);
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: error.message
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchClasses();
+  }, [toast]);
 
   const totalPages = Math.ceil(classes.length / ITEMS_PER_PAGE);
 
@@ -67,10 +96,11 @@ export default function ClassesPage() {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     return classes.slice(startIndex, endIndex);
-  }, [currentPage]);
+  }, [currentPage, classes]);
 
   const handleSuccess = () => {
     setOpen(false);
+    fetchClasses();
   };
 
   const handleDeleteClick = (cls: Class) => {
@@ -78,16 +108,32 @@ export default function ClassesPage() {
     setIsAlertOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedClass) {
-      console.log("Menghapus kelas:", selectedClass.id);
-      toast({
-        title: "Kelas Dihapus",
-        description: `Kelas "${selectedClass.name}" telah dihapus.`,
-      });
+  const handleConfirmDelete = async () => {
+    if (!selectedClass) return;
+
+    try {
+        const response = await fetch(`/api/classes/${selectedClass.id}`, {
+            method: 'DELETE',
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Gagal menghapus kelas.');
+        }
+        toast({
+            title: "Kelas Dihapus",
+            description: `Kelas "${selectedClass.name}" telah dihapus.`,
+        });
+        fetchClasses(); // Re-fetch data
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal Menghapus',
+            description: error.message
+        })
+    } finally {
+        setIsAlertOpen(false);
+        setSelectedClass(null);
     }
-    setIsAlertOpen(false);
-    setSelectedClass(null);
   };
   
   const handleEditClick = (cls: Class) => {
@@ -106,12 +152,10 @@ export default function ClassesPage() {
             <CardTitle>Manajemen Kelas</CardTitle>
             <CardDescription>Lihat dan kelola semua kelas.</CardDescription>
           </div>
-          <DialogTrigger asChild>
             <Button onClick={() => setOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Tambah Kelas
             </Button>
-          </DialogTrigger>
         </CardHeader>
         <CardContent>
           <Table>
@@ -124,12 +168,20 @@ export default function ClassesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedClasses.map((cls) => {
-                const walikelas = getTeacherById(cls.walikelasId);
+              {isLoading ? (
+                 Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                    </TableRow>
+                 ))
+              ) : paginatedClasses.map((cls) => {
                 return (
                   <TableRow key={cls.id}>
                     <TableCell className="font-medium">{cls.name}</TableCell>
-                    <TableCell>{walikelas?.name || "N/A"}</TableCell>
+                    <TableCell>{cls.walikelasName || "N/A"}</TableCell>
                     <TableCell>{cls.studentCount}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>

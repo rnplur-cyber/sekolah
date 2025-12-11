@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { students, classes, type Student } from "@/lib/data";
 import { PlusCircle, MoreHorizontal } from "lucide-react";
 import {
   Dialog,
@@ -28,7 +27,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -47,21 +45,47 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StudentForm } from "./_components/student-form";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
-function getClassById(id: string) {
-  return classes.find((c) => c.id === id);
+type Student = {
+    id: string;
+    name: string;
+    classId: string;
+    className: string;
+    avatarUrl: string;
+    avatarHint: string;
 }
 
 const ITEMS_PER_PAGE = 5;
 
 export default function StudentsPage() {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  
+  const fetchStudents = async () => {
+      setIsLoading(true);
+      try {
+          const res = await fetch('/api/students');
+          if (!res.ok) throw new Error("Gagal mengambil data siswa");
+          const data = await res.json();
+          setStudents(data.students);
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
+      } finally {
+          setIsLoading(false);
+      }
+  }
+
+  useEffect(() => {
+    fetchStudents();
+  }, [toast]);
 
   const totalPages = Math.ceil(students.length / ITEMS_PER_PAGE);
 
@@ -69,10 +93,11 @@ export default function StudentsPage() {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     return students.slice(startIndex, endIndex);
-  }, [currentPage]);
+  }, [currentPage, students]);
 
   const handleSuccess = () => {
     setOpen(false);
+    fetchStudents();
   };
 
   const handleDeleteClick = (student: Student) => {
@@ -80,16 +105,25 @@ export default function StudentsPage() {
     setIsAlertOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedStudent) {
-      console.log("Menghapus siswa:", selectedStudent.id);
-      toast({
-        title: "Siswa Dihapus",
-        description: `Siswa "${selectedStudent.name}" telah dihapus.`,
-      });
+  const handleConfirmDelete = async () => {
+    if (!selectedStudent) return;
+    try {
+        const res = await fetch(`/api/students/${selectedStudent.id}`, { method: 'DELETE' });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.message || "Gagal menghapus siswa.");
+        }
+        toast({
+            title: "Siswa Dihapus",
+            description: `Siswa "${selectedStudent.name}" telah dihapus.`,
+        });
+        fetchStudents();
+    } catch(error: any) {
+        toast({ variant: 'destructive', title: 'Gagal Menghapus', description: error.message });
+    } finally {
+        setIsAlertOpen(false);
+        setSelectedStudent(null);
     }
-    setIsAlertOpen(false);
-    setSelectedStudent(null);
   };
   
   const handleEditClick = (student: Student) => {
@@ -110,12 +144,10 @@ export default function StudentsPage() {
               Lihat dan kelola semua siswa terdaftar.
             </CardDescription>
           </div>
-          <DialogTrigger asChild>
             <Button onClick={() => setOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Tambah Siswa
             </Button>
-          </DialogTrigger>
         </CardHeader>
         <CardContent>
           <Table>
@@ -129,8 +161,17 @@ export default function StudentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedStudents.map((student) => {
-                const studentClass = getClassById(student.classId);
+              {isLoading ? (
+                Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                    </TableRow>
+                ))
+              ) : paginatedStudents.map((student) => {
                 return (
                   <TableRow key={student.id}>
                     <TableCell>
@@ -147,7 +188,7 @@ export default function StudentsPage() {
                     </TableCell>
                     <TableCell className="font-medium">{student.name}</TableCell>
                     <TableCell>{student.id}</TableCell>
-                    <TableCell>{studentClass?.name || "N/A"}</TableCell>
+                    <TableCell>{student.className || "N/A"}</TableCell>
                     <TableCell className="text-right">
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { newStudentApplicants, type NewStudentApplicant, type AdmissionStatus } from "@/lib/data";
+import { type NewStudentApplicant, type AdmissionStatus } from "@/lib/types";
 import { PlusCircle, MoreHorizontal, Check, X } from "lucide-react";
 import {
   Dialog,
@@ -39,6 +39,7 @@ import { AdmissionForm } from "./_components/admission-form";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 function getStatusVariant(
@@ -51,11 +52,12 @@ function getStatusVariant(
 
 const ITEMS_PER_PAGE = 5;
 
-function calculateAge(birthDate: Date): number {
+function calculateAge(birthDate: string | Date): number {
     const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    const dob = new Date(birthDate);
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
         age--;
     }
     return age;
@@ -63,10 +65,22 @@ function calculateAge(birthDate: Date): number {
 
 export default function AdmissionsPage() {
   const [open, setOpen] = useState(false);
-  const [applicants, setApplicants] = useState<NewStudentApplicant[]>(newStudentApplicants);
+  const [applicants, setApplicants] = useState<NewStudentApplicant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [academicYearFilter, setAcademicYearFilter] = useState("all");
   const { toast } = useToast();
+
+  // API for admissions not implemented, using mock data and local state manipulation for now
+  useEffect(() => {
+      // Simulating fetch
+      setIsLoading(true);
+      setTimeout(() => {
+          // In real app: fetch('/api/admissions').then(...)
+          setApplicants([]);
+          setIsLoading(false);
+      }, 1000);
+  }, []);
 
   const academicYears = useMemo(() => {
     const years = new Set(applicants.map(app => app.academicYear));
@@ -89,7 +103,7 @@ export default function AdmissionsPage() {
   }, [currentPage, filteredApplicants]);
   
   // Reset to page 1 when filter changes
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [academicYearFilter]);
 
@@ -98,16 +112,18 @@ export default function AdmissionsPage() {
     // In a real app, you'd refetch the data here.
     // For now, we just close the dialog.
     setOpen(false);
+    //
   };
 
   const handleStatusChange = (applicantId: string, newStatus: AdmissionStatus) => {
+    // This is a local state update, in a real app this would be an API call.
     setApplicants(prev => 
         prev.map(app => 
             app.id === applicantId ? { ...app, status: newStatus } : app
         )
     );
     toast({
-        title: "Status Diperbarui",
+        title: "Status Diperbarui (Simulasi)",
         description: `Status pendaftar telah diubah menjadi ${newStatus === 'Accepted' ? 'Diterima' : 'Ditolak'}.`,
     });
   };
@@ -159,7 +175,20 @@ export default function AdmissionsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedApplicants.length > 0 ? paginatedApplicants.map((applicant) => (
+              {isLoading ? (
+                  Array.from({length: ITEMS_PER_PAGE}).map((_, i) => (
+                      <TableRow key={i}>
+                          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                          <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                          <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                      </TableRow>
+                  ))
+              ) : paginatedApplicants.length > 0 ? paginatedApplicants.map((applicant) => (
                 <TableRow key={applicant.id}>
                   <TableCell className="font-medium">{applicant.name}</TableCell>
                   <TableCell>{calculateAge(applicant.birthDate)}</TableCell>
@@ -167,7 +196,7 @@ export default function AdmissionsPage() {
                   <TableCell>{applicant.gender}</TableCell>
                   <TableCell>{applicant.academicYear}</TableCell>
                   <TableCell>
-                    {format(applicant.registrationDate, "dd MMM yyyy")}
+                    {format(new Date(applicant.registrationDate), "dd MMM yyyy")}
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(applicant.status)}>
@@ -198,7 +227,7 @@ export default function AdmissionsPage() {
               )) : (
                  <TableRow>
                     <TableCell colSpan={8} className="text-center h-24">
-                        Tidak ada pendaftar yang cocok dengan filter yang dipilih.
+                        Tidak ada data pendaftar.
                     </TableCell>
                   </TableRow>
               )}

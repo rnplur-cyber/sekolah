@@ -21,10 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { teachers } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { User } from "../page";
+import type { Teacher } from "../../teachers/page";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const formSchema = z.object({
   email: z.string().email("Format email tidak valid."),
@@ -51,8 +52,32 @@ interface UserFormProps {
 
 export function UserForm({ onSuccess, existingUser }: UserFormProps) {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!existingUser;
+  
+  useEffect(() => {
+    async function fetchTeachers() {
+      setIsLoadingData(true);
+      try {
+        const res = await fetch('/api/teachers');
+        const data = await res.json();
+        if (!res.ok) throw new Error('Gagal memuat data guru');
+        setTeachers(data.teachers);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Tidak bisa memuat daftar guru.',
+        });
+      } finally {
+        setIsLoadingData(false);
+      }
+    }
+    fetchTeachers();
+  }, [toast]);
+
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(formSchema),
@@ -65,7 +90,7 @@ export function UserForm({ onSuccess, existingUser }: UserFormProps) {
   });
 
   const onSubmit = async (values: UserFormValues) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     // Make sure teacherId is null if role is not teacher
     if (values.role !== 'teacher') {
@@ -103,11 +128,22 @@ export function UserForm({ onSuccess, existingUser }: UserFormProps) {
             description: error.message,
         });
     } finally {
-        setIsLoading(false);
+        setIsSubmitting(false);
     }
   };
 
   const selectedRole = form.watch("role");
+  
+  if (isLoadingData) {
+      return <div className="space-y-6">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <div className="flex justify-end pt-2">
+            <Skeleton className="h-10 w-32" />
+          </div>
+      </div>
+  }
 
   return (
     <Form {...form}>
@@ -186,8 +222,8 @@ export function UserForm({ onSuccess, existingUser }: UserFormProps) {
             />
         )}
         <div className="flex justify-end pt-2">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Menyimpan..." : (isEditMode ? "Simpan Perubahan" : "Tambah Pengguna")}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Menyimpan..." : (isEditMode ? "Simpan Perubahan" : "Tambah Pengguna")}
           </Button>
         </div>
       </form>

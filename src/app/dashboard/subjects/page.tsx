@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -19,7 +19,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { subjects, type Subject } from "@/lib/data";
 import { PlusCircle, MoreHorizontal } from "lucide-react";
 import {
   Dialog,
@@ -27,7 +26,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -47,15 +45,47 @@ import {
 } from "@/components/ui/alert-dialog";
 import { SubjectForm } from "./_components/subject-form";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export type Subject = {
+  id: string;
+  name: string;
+};
 
 const ITEMS_PER_PAGE = 5;
 
 export default function SubjectsPage() {
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+
+  const fetchSubjects = async () => {
+      setIsLoading(true);
+      try {
+          const response = await fetch('/api/subjects');
+          if (!response.ok) {
+              throw new Error('Gagal memuat data mata pelajaran');
+          }
+          const data = await response.json();
+          setSubjects(data.subjects);
+      } catch (error: any) {
+          toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: error.message
+          });
+      } finally {
+          setIsLoading(false);
+      }
+  }
+
+  useEffect(() => {
+    fetchSubjects();
+  }, [toast]);
 
   const totalPages = Math.ceil(subjects.length / ITEMS_PER_PAGE);
 
@@ -63,11 +93,12 @@ export default function SubjectsPage() {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     return subjects.slice(startIndex, endIndex);
-  }, [currentPage]);
+  }, [currentPage, subjects]);
 
 
   const handleSuccess = () => {
     setOpen(false);
+    fetchSubjects();
   };
 
   const handleDeleteClick = (subject: Subject) => {
@@ -75,21 +106,35 @@ export default function SubjectsPage() {
     setIsAlertOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedSubject) {
-      // In a real app, you would delete the subject from the database.
-      console.log("Menghapus mata pelajaran:", selectedSubject.id);
-      toast({
-        title: "Mata Pelajaran Dihapus",
-        description: `Mata pelajaran "${selectedSubject.name}" telah dihapus.`,
-      });
+  const handleConfirmDelete = async () => {
+    if (!selectedSubject) return;
+
+    try {
+        const response = await fetch(`/api/subjects/${selectedSubject.id}`, {
+            method: 'DELETE',
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Gagal menghapus mata pelajaran.');
+        }
+        toast({
+            title: "Mata Pelajaran Dihapus",
+            description: `Mata pelajaran "${selectedSubject.name}" telah dihapus.`,
+        });
+        fetchSubjects();
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal Menghapus',
+            description: error.message,
+        });
+    } finally {
+        setIsAlertOpen(false);
+        setSelectedSubject(null);
     }
-    setIsAlertOpen(false);
-    setSelectedSubject(null);
   };
   
   const handleEditClick = (subject: Subject) => {
-    // In a real app, you would open an edit form.
     console.log("Mengubah mata pelajaran:", subject.id);
      toast({
         title: "Aksi Ubah",
@@ -107,12 +152,10 @@ export default function SubjectsPage() {
               Lihat dan kelola semua mata pelajaran.
             </CardDescription>
           </div>
-          <DialogTrigger asChild>
-            <Button onClick={() => setOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Tambah Mata Pelajaran
-            </Button>
-          </DialogTrigger>
+           <Button onClick={() => setOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Tambah Mata Pelajaran
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -124,7 +167,15 @@ export default function SubjectsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedSubjects.map((subject) => (
+              {isLoading ? (
+                 Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                    </TableRow>
+                 ))
+              ) : paginatedSubjects.map((subject) => (
                 <TableRow key={subject.id}>
                   <TableCell>{subject.id}</TableCell>
                   <TableCell className="font-medium">{subject.name}</TableCell>

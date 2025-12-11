@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nama mata pelajaran minimal harus 2 karakter."),
@@ -28,6 +29,7 @@ interface SubjectFormProps {
 
 export function SubjectForm({ onSuccess }: SubjectFormProps) {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -35,13 +37,35 @@ export function SubjectForm({ onSuccess }: SubjectFormProps) {
     },
   });
 
-  const onSubmit = (values: SubjectFormValues) => {
-    console.log("Data Mata Pelajaran Baru:", values);
-    toast({
-        title: "Mata Pelajaran Ditambahkan",
-        description: `Mata pelajaran ${values.name} telah berhasil dibuat.`,
-    });
-    onSuccess();
+  const onSubmit = async (values: SubjectFormValues) => {
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/subjects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(values)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Gagal menambahkan mata pelajaran.');
+        }
+
+        toast({
+            title: "Mata Pelajaran Ditambahkan",
+            description: `Mata pelajaran ${values.name} telah berhasil dibuat.`,
+        });
+        onSuccess();
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Gagal",
+            description: error.message,
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -61,7 +85,7 @@ export function SubjectForm({ onSuccess }: SubjectFormProps) {
           )}
         />
         <div className="flex justify-end">
-          <Button type="submit">Tambah Mata Pelajaran</Button>
+          <Button type="submit" disabled={isLoading}>{isLoading ? 'Menyimpan...' : 'Tambah Mata Pelajaran'}</Button>
         </div>
       </form>
     </Form>

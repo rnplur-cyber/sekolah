@@ -20,18 +20,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
-  attendanceRecords,
-  teacherAttendanceRecords,
-  employeeAttendanceRecords,
-  students,
-  teachers,
-  employees,
-  classes,
   type AttendanceRecord,
   type Student,
   type Teacher,
   type Employee,
-} from "@/lib/data";
+  type Class,
+} from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
@@ -43,23 +37,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
 
-
-function getStudentById(id: string) {
-  return students.find((s) => s.id === id);
-}
-
-function getTeacherById(id: string) {
-  return teachers.find((t) => t.id === id);
-}
-
-function getEmployeeById(id: string) {
-  return employees.find((e) => e.id === id);
-}
-
-function getClassById(id: string) {
-  return classes.find((c) => c.id === id);
-}
 
 function getStatusVariant(
   status: AttendanceRecord["status"]
@@ -142,20 +121,70 @@ export default function ReportPage() {
   const [classId, setClassId] = useState("all");
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedMonth, setSelectedMonth] = useState(getMonth(new Date()).toString());
-  const [isClient, setIsClient] = useState(false);
+  
+  // Data state
+  const [students, setStudents] = useState<Student[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [teacherAttendanceRecords, setTeacherAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [employeeAttendanceRecords, setEmployeeAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsClient(true);
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        // Using mock data for now as API endpoints are not fully implemented
+        const classesRes = await fetch('/api/classes');
+        const studentsRes = await fetch('/api/students');
+        const teachersRes = await fetch('/api/teachers');
+        // const employeesRes = await fetch('/api/employees');
+        // const attendanceRes = await fetch('/api/attendance/students');
+        // const teacherAttendanceRes = await fetch('/api/attendance/teachers');
+        // const employeeAttendanceRes = await fetch('/api/attendance/employees');
+
+        const classesData = await classesRes.json();
+        const studentsData = await studentsRes.json();
+        const teachersData = await teachersRes.json();
+        // Mock data
+        const employeesData = { employees: [] };
+        const attendanceData = { attendanceRecords: [] };
+        const teacherAttendanceData = { attendanceRecords: [] };
+        const employeeAttendanceData = { attendanceRecords: [] };
+
+
+        setClasses(classesData.classes || []);
+        setStudents(studentsData.students || []);
+        setTeachers(teachersData.teachers || []);
+        setEmployees(employeesData.employees || []);
+        setAttendanceRecords(attendanceData.attendanceRecords.map((r: any) => ({...r, timestamp: new Date(r.timestamp)})));
+        setTeacherAttendanceRecords(teacherAttendanceData.attendanceRecords.map((r: any) => ({...r, timestamp: new Date(r.timestamp)})));
+        setEmployeeAttendanceRecords(employeeAttendanceData.attendanceRecords.map((r: any) => ({...r, timestamp: new Date(r.timestamp)})));
+
+      } catch (error) {
+        console.error("Failed to fetch report data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
   }, []);
 
   const dateRange = useMemo(() => {
-    if (!isClient) return undefined;
     const year = parseInt(selectedYear);
     const month = parseInt(selectedMonth);
     const from = startOfMonth(new Date(year, month));
     const to = endOfMonth(new Date(year, month));
     return { from, to };
-  }, [selectedYear, selectedMonth, isClient]);
+  }, [selectedYear, selectedMonth]);
+  
+  const getStudentById = (id: string) => students.find((s) => s.id === id);
+  const getTeacherById = (id: string) => teachers.find((t) => t.id === id);
+  const getEmployeeById = (id: string) => employees.find((e) => e.id === id);
+  const getClassById = (id: string) => classes.find((c) => c.id === id);
 
   const getChartData = <T extends {id: string}, R extends {timestamp: Date; status: "Present" | "Late" | "Absent"}>(
     allPersons: T[],
@@ -197,7 +226,7 @@ export default function ReportPage() {
 
       return isClassMatch && isDateMatch;
     });
-  }, [classId, dateRange]);
+  }, [classId, dateRange, attendanceRecords, students]);
 
   const filteredTeacherRecords = useMemo(() => {
     if (!dateRange) return [];
@@ -208,7 +237,7 @@ export default function ReportPage() {
         : true;
       return isDateMatch;
     });
-  }, [dateRange]);
+  }, [dateRange, teacherAttendanceRecords]);
 
   const filteredEmployeeRecords = useMemo(() => {
     if (!dateRange) return [];
@@ -219,7 +248,7 @@ export default function ReportPage() {
         : true;
       return isDateMatch;
     });
-  }, [dateRange]);
+  }, [dateRange, employeeAttendanceRecords]);
 
   const studentChartData = useMemo(() => {
     let relevantStudents = students;
@@ -229,11 +258,28 @@ export default function ReportPage() {
     return getChartData(relevantStudents, filteredStudentRecords, 'studentId');
   }, [filteredStudentRecords, students, classId, dateRange]);
   
-  const teacherChartData = useMemo(() => getChartData(teachers, filteredTeacherRecords, 'teacherId'), [filteredTeacherRecords, dateRange]);
-  const employeeChartData = useMemo(() => getChartData(employees, filteredEmployeeRecords, 'employeeId'), [filteredEmployeeRecords, dateRange]);
+  const teacherChartData = useMemo(() => getChartData(teachers, filteredTeacherRecords, 'teacherId'), [filteredTeacherRecords, teachers, dateRange]);
+  const employeeChartData = useMemo(() => getChartData(employees, filteredEmployeeRecords, 'employeeId'), [filteredEmployeeRecords, employees, dateRange]);
 
-  if (!isClient) {
-    return null; // or a loading skeleton
+  if (isLoading) {
+    return (
+        <Card>
+            <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-4 w-2/3 mt-2" /></CardHeader>
+            <CardContent>
+                <div className="space-y-6">
+                    <div className="flex justify-between">
+                        <Skeleton className="h-10 w-1/4" />
+                        <div className="flex gap-4">
+                            <Skeleton className="h-10 w-24" />
+                            <Skeleton className="h-10 w-36" />
+                        </div>
+                    </div>
+                    <Skeleton className="h-[300px] w-full" />
+                    <Skeleton className="h-32 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    );
   }
 
   return (
@@ -352,10 +398,10 @@ export default function ReportPage() {
                           {studentClass?.name || "N/A"}
                         </TableCell>
                         <TableCell>
-                          {format(record.timestamp, "HH:mm:ss")}
+                          {format(new Date(record.timestamp), "HH:mm:ss")}
                         </TableCell>
                         <TableCell>
-                          {format(record.timestamp, "dd MMM yyyy")}
+                          {format(new Date(record.timestamp), "dd MMM yyyy")}
                         </TableCell>
                         <TableCell className="text-right">
                            <Badge variant={getStatusVariant(record.status)}>{record.status === 'Present' ? 'Hadir' : record.status === 'Late' ? 'Terlambat' : 'Absen'}</Badge>
@@ -409,10 +455,10 @@ export default function ReportPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {format(record.timestamp, "HH:mm:ss")}
+                          {format(new Date(record.timestamp), "HH:mm:ss")}
                         </TableCell>
                         <TableCell>
-                          {format(record.timestamp, "dd MMM yyyy")}
+                          {format(new Date(record.timestamp), "dd MMM yyyy")}
                         </TableCell>
                         <TableCell className="text-right">
                           <Badge variant={getStatusVariant(record.status)}>{record.status === 'Present' ? 'Hadir' : record.status === 'Late' ? 'Terlambat' : 'Absen'}</Badge>
@@ -468,10 +514,10 @@ export default function ReportPage() {
                         </TableCell>
                          <TableCell className="hidden sm:table-cell">{employee?.role || "N/A"}</TableCell>
                         <TableCell>
-                          {format(record.timestamp, "HH:mm:ss")}
+                          {format(new Date(record.timestamp), "HH:mm:ss")}
                         </TableCell>
                         <TableCell>
-                          {format(record.timestamp, "dd MMM yyyy")}
+                          {format(new Date(record.timestamp), "dd MMM yyyy")}
                         </TableCell>
                         <TableCell className="text-right">
                           <Badge variant={getStatusVariant(record.status)}>{record.status === 'Present' ? 'Hadir' : record.status === 'Late' ? 'Terlambat' : 'Absen'}</Badge>

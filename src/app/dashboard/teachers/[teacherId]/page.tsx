@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
 import {
   Card,
@@ -23,12 +23,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  teachers,
-  classes,
-  teachingJournals,
-  subjects,
   type TeachingJournal,
-} from "@/lib/data";
+  type Teacher,
+  type Subject,
+  type Class,
+} from "@/lib/types";
 import { ArrowLeft, PlusCircle, MoreHorizontal, Search, File as FileIcon } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -57,19 +56,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { JournalForm } from "./_components/journal-form";
 import { useToast } from "@/hooks/use-toast";
-
-function getTeacherById(id: string) {
-  return teachers.find((t) => t.id === id);
-}
-
-function getClassById(id: string) {
-  return classes.find((c) => c.id === id);
-}
-
-function getSubjectById(id: string) {
-    return subjects.find(s => s.id === id);
-}
-
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -85,25 +72,58 @@ export default function TeacherJournalPage() {
   const params = useParams();
   const teacherId = params.teacherId as string;
   
-  const teacher = getTeacherById(teacherId);
+  const [teacher, setTeacher] = useState<Teacher | null>(null);
+  const [subject, setSubject] = useState<Subject | null>(null);
+  const [taughtClasses, setTaughtClasses] = useState<Class[]>([]);
+  const [journals, setJournals] = useState<TeachingJournal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!teacher) {
-    notFound();
-  }
-  
-  const subject = getSubjectById(teacher.subjectId);
-  const taughtClasses = classes.filter(c => teacher.taughtClassIds.includes(c.id));
-  
-  const journals = useMemo(() => {
-    return teachingJournals
-      .filter((j) => j.teacherId === teacher.id)
-      .sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [teacher.id]);
+  useEffect(() => {
+    if (!teacherId) return;
 
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            // API endpoints for teacher details and journals are not yet implemented.
+            // Using mock-like data fetching for now.
+            const teachersRes = await fetch('/api/teachers');
+            const teachersData = await teachersRes.json();
+            const currentTeacher = teachersData.teachers.find((t: Teacher) => t.id === teacherId);
+            
+            if (!currentTeacher) {
+                notFound();
+                return;
+            }
+            setTeacher(currentTeacher);
+
+            const subjectsRes = await fetch('/api/subjects');
+            const subjectsData = await subjectsRes.json();
+            const currentSubject = subjectsData.subjects.find((s: Subject) => s.id === currentTeacher.subjectId);
+            setSubject(currentSubject);
+
+            const classesRes = await fetch('/api/classes');
+            const classesData = await classesRes.json();
+            const currentTaughtClasses = classesData.classes.filter((c: Class) => currentTeacher.taughtClassIds.includes(c.id));
+            setTaughtClasses(currentTaughtClasses);
+
+            // Mocking journal fetching
+            setJournals([]);
+            
+        } catch (error) {
+            console.error("Failed to fetch data for teacher page:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Gagal memuat data guru.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
+  }, [teacherId, toast]);
+
+  
   const filteredJournals = useMemo(() => {
     return journals.filter(journal => 
-        journal.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        journal.notes.toLowerCase().includes(searchTerm.toLowerCase())
+        (journal.topic && journal.topic.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (journal.notes && journal.notes.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [journals, searchTerm]);
 
@@ -117,6 +137,7 @@ export default function TeacherJournalPage() {
   const handleSuccess = () => {
     setIsAddOpen(false);
     setIsEditOpen(false);
+    // Refetch journals here in a real app
   };
 
   const handleEditClick = (journal: TeachingJournal) => {
@@ -131,15 +152,41 @@ export default function TeacherJournalPage() {
 
   const handleConfirmDelete = () => {
     if (selectedJournal) {
+      // API call to delete would go here
       console.log("Menghapus Jurnal:", selectedJournal.id);
       toast({
-        title: "Jurnal Dihapus",
+        title: "Jurnal Dihapus (Simulasi)",
         description: `Entri jurnal untuk "${selectedJournal.topic}" telah dihapus.`,
       });
     }
     setIsAlertOpen(false);
     setSelectedJournal(null);
   };
+  
+  if (isLoading) {
+      return (
+          <div className="flex flex-col gap-6">
+              <div className="flex items-center gap-4">
+                  <Skeleton className="h-10 w-10" />
+                  <div className="flex items-center gap-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div>
+                          <Skeleton className="h-7 w-40" />
+                          <Skeleton className="h-4 w-24 mt-1" />
+                      </div>
+                  </div>
+              </div>
+              <Card>
+                  <CardHeader><Skeleton className="h-8 w-48" /><Skeleton className="h-4 w-64 mt-2"/></CardHeader>
+                  <CardContent><Skeleton className="h-48 w-full"/></CardContent>
+              </Card>
+          </div>
+      )
+  }
+
+  if (!teacher) {
+    return notFound();
+  }
 
   return (
     <>
@@ -203,13 +250,12 @@ export default function TeacherJournalPage() {
               <TableBody>
                 {paginatedJournals.length > 0 ? (
                   paginatedJournals.map((journal) => {
-                    const journalClass = getClassById(journal.classId);
-                    const journalSubject = getSubjectById(journal.subjectId);
+                    const journalClass = taughtClasses.find(c => c.id === journal.classId);
                     return (
                       <TableRow key={journal.id}>
-                        <TableCell>{format(journal.date, "dd MMM yyyy")}</TableCell>
+                        <TableCell>{format(new Date(journal.date), "dd MMM yyyy")}</TableCell>
                         <TableCell>{journalClass?.name || "N/A"}</TableCell>
-                        <TableCell>{journalSubject?.name || "N/A"}</TableCell>
+                        <TableCell>{subject?.name || "N/A"}</TableCell>
                         <TableCell className="font-medium">
                           {journal.topic}
                         </TableCell>
@@ -289,7 +335,7 @@ export default function TeacherJournalPage() {
               Isi formulir untuk menambahkan entri jurnal mengajar baru untuk {teacher.name}.
             </DialogDescription>
           </DialogHeader>
-          <JournalForm teacher={teacher} subject={subject} taughtClasses={taughtClasses} onSuccess={handleSuccess} />
+          <JournalForm teacher={teacher} subject={subject ?? undefined} taughtClasses={taughtClasses} onSuccess={handleSuccess} />
         </DialogContent>
       </Dialog>
 
@@ -303,7 +349,7 @@ export default function TeacherJournalPage() {
           </DialogHeader>
           <JournalForm 
             teacher={teacher}
-            subject={subject}
+            subject={subject ?? undefined}
             taughtClasses={taughtClasses} 
             onSuccess={handleSuccess}
             existingJournal={selectedJournal}
@@ -329,5 +375,3 @@ export default function TeacherJournalPage() {
     </>
   );
 }
-
-    

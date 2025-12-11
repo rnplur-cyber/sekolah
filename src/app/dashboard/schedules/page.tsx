@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -25,7 +25,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -45,23 +44,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  classes,
-  schedules,
-  subjects,
-  teachers,
   type Schedule,
   type DayOfWeek,
-} from "@/lib/data";
+  type Teacher,
+  type Subject,
+  type Class
+} from "@/lib/types";
 import { ScheduleForm } from "./_components/schedule-form";
 import { useToast } from "@/hooks/use-toast";
-
-function getSubjectById(id: string) {
-  return subjects.find((s) => s.id === id);
-}
-
-function getTeacherById(id: string) {
-  return teachers.find((t) => t.id === id);
-}
+import { Skeleton } from "@/components/ui/skeleton";
 
 const daysOfWeek: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const daysOfWeekIndonesian: { [key in DayOfWeek]: string } = {
@@ -78,8 +69,46 @@ export default function SchedulesPage() {
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const { toast } = useToast();
 
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+      async function fetchData() {
+          setIsLoading(true);
+          try {
+              // API endpoint for schedules is not yet implemented, using mock data
+              const [classesRes, teachersRes, subjectsRes] = await Promise.all([
+                  fetch('/api/classes'),
+                  fetch('/api/teachers'),
+                  fetch('/api/subjects'),
+              ]);
+              
+              const classesData = await classesRes.json();
+              const teachersData = await teachersRes.json();
+              const subjectsData = await subjectsRes.json();
+              
+              setClasses(classesData.classes || []);
+              setTeachers(teachersData.teachers || []);
+              setSubjects(subjectsData.subjects || []);
+              // Using empty array for schedules as API is not ready
+              setSchedules([]);
+
+          } catch (error) {
+              console.error("Failed to fetch schedule data:", error);
+              toast({ variant: 'destructive', title: 'Error', description: 'Gagal memuat data.' });
+          } finally {
+              setIsLoading(false);
+          }
+      }
+      fetchData();
+  }, [toast]);
+
   const handleSuccess = () => {
     setOpen(false);
+    // In a real app, you would refetch schedules here
   };
 
   const getScheduleForDay = (classId: string, day: DayOfWeek) => {
@@ -87,6 +116,9 @@ export default function SchedulesPage() {
       .filter((s) => s.classId === classId && s.day === day)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
+  
+  const getSubjectById = (id: string) => subjects.find((s) => s.id === id);
+  const getTeacherById = (id: string) => teachers.find((t) => t.id === id);
 
   const handleDeleteClick = (schedule: Schedule) => {
     setSelectedSchedule(schedule);
@@ -104,6 +136,18 @@ export default function SchedulesPage() {
     setIsAlertOpen(false);
     setSelectedSchedule(null);
   };
+  
+  if (isLoading) {
+      return (
+          <Card>
+              <CardHeader><Skeleton className="h-8 w-1/3"/><Skeleton className="h-4 w-2/3 mt-2"/></CardHeader>
+              <CardContent>
+                  <Skeleton className="h-10 w-full mb-4"/>
+                  <Skeleton className="h-40 w-full"/>
+              </CardContent>
+          </Card>
+      )
+  }
 
   return (
     <>
@@ -115,14 +159,13 @@ export default function SchedulesPage() {
               Lihat dan kelola jadwal pelajaran kelas.
             </CardDescription>
           </div>
-          <DialogTrigger asChild>
             <Button onClick={() => setOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Tambah Jadwal
             </Button>
-          </DialogTrigger>
         </CardHeader>
         <CardContent>
+          {classes.length > 0 ? (
           <Tabs defaultValue={classes[0]?.id || ""}>
             <TabsList className="grid w-full grid-cols-5">
               {classes.map((cls) => (
@@ -194,6 +237,11 @@ export default function SchedulesPage() {
               </TabsContent>
             ))}
           </Tabs>
+          ) : (
+            <div className="text-center text-muted-foreground py-12">
+                <p>Tidak ada data kelas untuk menampilkan jadwal. Silakan tambah kelas terlebih dahulu.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
       <Dialog open={open} onOpenChange={setOpen}>

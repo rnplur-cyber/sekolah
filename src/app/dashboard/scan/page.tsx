@@ -1,28 +1,62 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { students, classes } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { Student, Class } from "@/lib/types";
+
 
 type ScanStatus = "idle" | "scanning" | "success" | "error";
 
 export default function ScanPage() {
   const [status, setStatus] = useState<ScanStatus>("idle");
-  const [scannedStudent, setScannedStudent] = useState<(typeof students)[0] | null>(null);
+  const [scannedStudent, setScannedStudent] = useState<Student | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+      async function fetchData() {
+          try {
+              const studentsRes = await fetch('/api/students');
+              const classesRes = await fetch('/api/classes');
+              if (!studentsRes.ok || !classesRes.ok) throw new Error('Gagal memuat data');
+              
+              const studentsData = await studentsRes.json();
+              const classesData = await classesRes.json();
+              setStudents(studentsData.students);
+              setClasses(classesData.classes);
+          } catch(e) {
+              console.error(e);
+              toast({ variant: 'destructive', title: 'Error', description: 'Gagal memuat data siswa dan kelas.' });
+          }
+      }
+      fetchData();
+  }, [toast]);
 
   const handleScan = () => {
     setStatus("scanning");
     setScannedStudent(null);
+    if(students.length === 0) {
+        setStatus("error");
+        toast({
+          variant: "destructive",
+          title: "Tidak ada data siswa",
+          description: "Tidak dapat melakukan pemindaian karena tidak ada data siswa.",
+        });
+        return;
+    }
 
     setTimeout(() => {
       // Simulate a 50% chance of an error
       if (Math.random() > 0.5) {
         const randomStudent = students[Math.floor(Math.random() * students.length)];
+        // Here you would typically make an API call to record the attendance
+        // For now, we simulate success
         setScannedStudent(randomStudent);
         setStatus("success");
         toast({

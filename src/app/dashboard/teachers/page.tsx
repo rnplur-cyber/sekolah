@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { teachers, classes, subjects, type Teacher } from "@/lib/data";
 import { PlusCircle, BookOpen, MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,7 +27,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -47,18 +45,71 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { TeacherForm } from "./_components/teacher-form";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export type Teacher = {
+  id: string;
+  name: string;
+  nip: string;
+  subjectId: string;
+  subjectName: string;
+  avatarUrl: string;
+  avatarHint: string;
+  taughtClassIds: string[];
+};
+
+export type Class = {
+    id: string;
+    name: string;
+};
 
 const ITEMS_PER_PAGE = 5;
 
 export default function TeachersPage() {
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+        const [teachersRes, classesRes] = await Promise.all([
+            fetch('/api/teachers'),
+            fetch('/api/classes'),
+        ]);
+
+        if (!teachersRes.ok || !classesRes.ok) {
+            throw new Error('Gagal memuat data');
+        }
+
+        const { teachers: teacherData } = await teachersRes.json();
+        const { classes: classData } = await classesRes.json();
+        
+        setTeachers(teacherData);
+        setClasses(classData);
+
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: error.message,
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [toast]);
 
   const totalPages = Math.ceil(teachers.length / ITEMS_PER_PAGE);
 
@@ -66,10 +117,11 @@ export default function TeachersPage() {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     return teachers.slice(startIndex, endIndex);
-  }, [currentPage]);
+  }, [currentPage, teachers]);
 
   const handleSuccess = () => {
     setOpen(false);
+    fetchData();
   };
 
   const handleDeleteClick = (teacher: Teacher) => {
@@ -77,16 +129,32 @@ export default function TeachersPage() {
     setIsAlertOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedTeacher) {
-      console.log("Menghapus guru:", selectedTeacher.id);
-      toast({
-        title: "Guru Dihapus",
-        description: `Guru "${selectedTeacher.name}" telah dihapus.`,
-      });
+  const handleConfirmDelete = async () => {
+    if (!selectedTeacher) return;
+    
+    try {
+        const response = await fetch(`/api/teachers/${selectedTeacher.id}`, {
+            method: 'DELETE',
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Gagal menghapus guru.');
+        }
+        toast({
+            title: "Guru Dihapus",
+            description: `Guru "${selectedTeacher.name}" telah dihapus.`,
+        });
+        fetchData();
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal Menghapus',
+            description: error.message,
+        })
+    } finally {
+        setIsAlertOpen(false);
+        setSelectedTeacher(null);
     }
-    setIsAlertOpen(false);
-    setSelectedTeacher(null);
   };
   
   const handleEditClick = (teacher: Teacher) => {
@@ -107,12 +175,10 @@ export default function TeachersPage() {
               Lihat dan kelola semua guru terdaftar.
             </CardDescription>
           </div>
-          <DialogTrigger asChild>
-             <Button onClick={() => setOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Tambah Guru
-            </Button>
-          </DialogTrigger>
+          <Button onClick={() => setOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Tambah Guru
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -127,8 +193,18 @@ export default function TeachersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedTeachers.map((teacher) => {
-                const subject = subjects.find(s => s.id === teacher.subjectId);
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                    </TableRow>
+                ))
+              ) : paginatedTeachers.map((teacher) => {
                 return (
                     <TableRow key={teacher.id}>
                     <TableCell>
@@ -143,10 +219,10 @@ export default function TeachersPage() {
                     </TableCell>
                     <TableCell className="font-medium">{teacher.name}</TableCell>
                     <TableCell>{teacher.nip}</TableCell>
-                    <TableCell>{subject?.name || "N/A"}</TableCell>
+                    <TableCell>{teacher.subjectName || "N/A"}</TableCell>
                     <TableCell>
                         <div className="flex flex-wrap gap-1">
-                        {teacher.taughtClassIds.map((classId) => {
+                        {teacher.taughtClassIds && teacher.taughtClassIds.map((classId) => {
                             const taughtClass = classes.find(
                             (c) => c.id === classId
                             );
@@ -231,7 +307,7 @@ export default function TeachersPage() {
             <AlertDialogTitle>Apakah Anda benar-benar yakin?</AlertDialogTitle>
             <AlertDialogDescription>
               Tindakan ini tidak dapat dibatalkan. Ini akan menghapus guru secara permanen
-              "{selectedTeacher?.name}".
+              "{selectedTeacher?.name}" beserta akun pengguna yang terkait.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -204,7 +204,6 @@ export default function DashboardPage() {
               {attendanceRecords.slice(0, 5).map((record) => {
                 const student = getStudentById(record.studentId);
                 const studentClass = student ? getClassById(student.classId) : null;
-                const timestamp = new Date(record.timestamp);
                 return (
                   <TableRow key={record.id}>
                     <TableCell>
@@ -217,8 +216,8 @@ export default function DashboardPage() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{studentClass?.name || "N/A"}</TableCell>
-                    <TableCell>{format(timestamp, "HH:mm:ss")}</TableCell>
-                    <TableCell>{format(timestamp, "dd MMM yyyy")}</TableCell>
+                    <TableCell>{format(new Date(record.timestamp), "HH:mm:ss")}</TableCell>
+                    <TableCell>{format(new Date(record.timestamp), "dd MMM yyyy")}</TableCell>
                     <TableCell className="text-right">
                        <Badge variant={getStatusVariant(record.status)}>{record.status === 'Present' ? 'Hadir' : record.status === 'Late' ? 'Terlambat' : 'Absen'}</Badge>
                     </TableCell>
