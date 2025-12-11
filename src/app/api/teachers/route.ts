@@ -34,7 +34,7 @@ export async function GET() {
 // CREATE a new teacher
 export async function POST(req: NextRequest) {
   try {
-    const { name, nip, subjectId, taughtClassIds = [], avatarUrl, avatarHint } = await req.json();
+    const { name, nip, subjectId, avatarUrl, avatarHint } = await req.json();
 
     if (!name || !nip || !subjectId) {
       return NextResponse.json({ message: 'Nama, NIP, dan Mata Pelajaran harus diisi.' }, { status: 400 });
@@ -42,31 +42,15 @@ export async function POST(req: NextRequest) {
 
     const teacherId = `TCH-${nanoid()}`;
 
-    const connection = await db.getConnection();
-    await connection.beginTransaction();
+    // taughtClassIds is no longer required or handled in this form.
+    // It can be managed elsewhere.
 
-    try {
-        await connection.execute(
-            'INSERT INTO teachers (id, name, nip, subjectId, avatarUrl, avatarHint) VALUES (?, ?, ?, ?, ?, ?)',
-            [teacherId, name, nip, subjectId, avatarUrl || `https://picsum.photos/seed/${teacherId}/100/100`, avatarHint || 'person portrait']
-        );
+    await db.execute(
+        'INSERT INTO teachers (id, name, nip, subjectId, avatarUrl, avatarHint) VALUES (?, ?, ?, ?, ?, ?)',
+        [teacherId, name, nip, subjectId, avatarUrl || `https://picsum.photos/seed/${teacherId}/100/100`, avatarHint || 'person portrait']
+    );
 
-        // Insert into teacher_classes table if there are any classes
-        if (taughtClassIds && taughtClassIds.length > 0) {
-            const classValues = taughtClassIds.map((classId: string) => [teacherId, classId]);
-            await connection.query('INSERT INTO teacher_classes (teacherId, classId) VALUES ?', [classValues]);
-        }
-
-        await connection.commit();
-        connection.release();
-
-        return NextResponse.json({ message: 'Guru berhasil ditambahkan.', teacherId }, { status: 201 });
-    } catch (error) {
-        await connection.rollback();
-        connection.release();
-        console.error('Transaction Error:', error);
-        return NextResponse.json({ message: 'Gagal menambahkan guru ke database.' }, { status: 500 });
-    }
+    return NextResponse.json({ message: 'Guru berhasil ditambahkan.', teacherId }, { status: 201 });
 
   } catch (error) {
     console.error('Failed to create teacher:', error);
