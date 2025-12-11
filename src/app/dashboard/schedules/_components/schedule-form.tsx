@@ -98,14 +98,32 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
     },
   });
 
-  const onSubmit = (values: ScheduleFormValues) => {
-    // API submission logic would go here
-    console.log("Data Jadwal Baru:", values);
-    toast({
-      title: "Jadwal Ditambahkan",
-      description: `Jadwal baru telah berhasil dibuat. (Simulasi)`,
-    });
-    onSuccess();
+  const onSubmit = async (values: ScheduleFormValues) => {
+    setIsSubmitting(true);
+    try {
+        const response = await fetch('/api/schedules', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(values),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Gagal menyimpan jadwal.');
+        }
+        toast({
+          title: "Jadwal Ditambahkan",
+          description: `Jadwal baru telah berhasil dibuat.`,
+        });
+        onSuccess();
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal',
+            description: error.message,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -247,7 +265,7 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
           />
         </div>
         <div className="flex justify-end pt-4">
-          <Button type="submit">Tambah Jadwal</Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : 'Tambah Jadwal'}</Button>
         </div>
       </form>
     </Form>

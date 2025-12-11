@@ -75,40 +75,41 @@ export default function SchedulesPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-      async function fetchData() {
-          setIsLoading(true);
-          try {
-              // API endpoint for schedules is not yet implemented, using mock data
-              const [classesRes, teachersRes, subjectsRes] = await Promise.all([
-                  fetch('/api/classes'),
-                  fetch('/api/teachers'),
-                  fetch('/api/subjects'),
-              ]);
-              
-              const classesData = await classesRes.json();
-              const teachersData = await teachersRes.json();
-              const subjectsData = await subjectsRes.json();
-              
-              setClasses(classesData.classes || []);
-              setTeachers(teachersData.teachers || []);
-              setSubjects(subjectsData.subjects || []);
-              // Using empty array for schedules as API is not ready
-              setSchedules([]);
+  const fetchData = async () => {
+      setIsLoading(true);
+      try {
+          const [schedulesRes, classesRes, teachersRes, subjectsRes] = await Promise.all([
+              fetch('/api/schedules'),
+              fetch('/api/classes'),
+              fetch('/api/teachers'),
+              fetch('/api/subjects'),
+          ]);
+          
+          const schedulesData = await schedulesRes.json();
+          const classesData = await classesRes.json();
+          const teachersData = await teachersRes.json();
+          const subjectsData = await subjectsRes.json();
 
-          } catch (error) {
-              console.error("Failed to fetch schedule data:", error);
-              toast({ variant: 'destructive', title: 'Error', description: 'Gagal memuat data.' });
-          } finally {
-              setIsLoading(false);
-          }
+          setSchedules(schedulesData.schedules || []);
+          setClasses(classesData.classes || []);
+          setTeachers(teachersData.teachers || []);
+          setSubjects(subjectsData.subjects || []);
+
+      } catch (error) {
+          console.error("Failed to fetch schedule data:", error);
+          toast({ variant: 'destructive', title: 'Error', description: 'Gagal memuat data.' });
+      } finally {
+          setIsLoading(false);
       }
-      fetchData();
+  }
+
+  useEffect(() => {
+    fetchData();
   }, [toast]);
 
   const handleSuccess = () => {
     setOpen(false);
-    // In a real app, you would refetch schedules here
+    fetchData();
   };
 
   const getScheduleForDay = (classId: string, day: DayOfWeek) => {
@@ -125,16 +126,31 @@ export default function SchedulesPage() {
     setIsAlertOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedSchedule) {
-      console.log("Menghapus jadwal:", selectedSchedule.id);
-      toast({
-        title: "Jadwal Dihapus",
-        description: `Entri jadwal telah dihapus.`,
-      });
+  const handleConfirmDelete = async () => {
+    if (!selectedSchedule) return;
+    try {
+        const response = await fetch(`/api/schedules/${selectedSchedule.id}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Gagal menghapus jadwal');
+        }
+        toast({
+            title: "Jadwal Dihapus",
+            description: `Entri jadwal telah dihapus.`,
+        });
+        fetchData();
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal',
+            description: error.message
+        });
+    } finally {
+        setIsAlertOpen(false);
+        setSelectedSchedule(null);
     }
-    setIsAlertOpen(false);
-    setSelectedSchedule(null);
   };
   
   if (isLoading) {
