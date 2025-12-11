@@ -149,7 +149,7 @@ export function AdmissionForm({ onSuccess }: AdmissionFormProps) {
             render={({ field }) => (
                 <FormItem className="flex flex-col">
                     <FormLabel className="mb-1.5">Tanggal Lahir</FormLabel>
-                    <Popover>
+                    <Popover modal={true}>
                         <PopoverTrigger asChild>
                         <FormControl>
                             <Button
