@@ -27,9 +27,7 @@ const formSchema = z.object({
   name: z.string().min(2, "Nama minimal harus 2 karakter."),
   nip: z.string().regex(/^\d+$/, "NIP harus berupa angka.").min(10, "NIP minimal harus 10 digit."),
   subjectId: z.string().nonempty("Silakan pilih mata pelajaran."),
-  taughtClassIds: z.array(z.string()).refine(value => value.some(item => item), {
-    message: "Anda harus memilih setidaknya satu kelas.",
-  }),
+  taughtClassIds: z.array(z.string()).min(1, { message: "Anda harus memilih setidaknya satu kelas." }),
 });
 
 type TeacherFormValues = z.infer<typeof formSchema>;
