@@ -8,13 +8,14 @@ const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 12);
 // GET all schedules
 export async function GET() {
   try {
+    // Optimized query to get all schedules ordered correctly
     const [rows] = await db.execute(`
       SELECT 
-        s.id, s.classId, s.subjectId, s.teacherId, s.day, 
-        TIME_FORMAT(s.startTime, '%H:%i') AS startTime, 
-        TIME_FORMAT(s.endTime, '%H:%i') AS endTime
-      FROM schedules s
-      ORDER BY s.day, s.startTime
+        id, classId, subjectId, teacherId, day, 
+        TIME_FORMAT(startTime, '%H:%i') AS startTime, 
+        TIME_FORMAT(endTime, '%H:%i') AS endTime
+      FROM schedules
+      ORDER BY FIELD(day, "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"), startTime, endTime
     `);
     return NextResponse.json({ schedules: rows });
   } catch (error) {

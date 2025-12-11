@@ -76,7 +76,7 @@ export default function SchedulesPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
-      setIsLoading(true);
+      // Intentionally not setting loading to true here to avoid flicker on refetch
       try {
           const [schedulesRes, classesRes, teachersRes, subjectsRes] = await Promise.all([
               fetch('/api/schedules'),
@@ -105,10 +105,11 @@ export default function SchedulesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [toast]);
+  }, []);
 
   const handleSuccess = () => {
     setOpen(false);
+    setIsLoading(true);
     fetchData();
   };
 
@@ -181,83 +182,85 @@ export default function SchedulesPage() {
             </Button>
         </CardHeader>
         <CardContent>
-          {classes.length > 0 ? (
-          <Tabs defaultValue={classes[0]?.id || ""}>
-            <TabsList className="grid w-full grid-cols-5">
-              {classes.map((cls) => (
-                <TabsTrigger key={cls.id} value={cls.id}>
-                  {cls.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {classes.map((cls) => (
-              <TabsContent key={cls.id} value={cls.id}>
-                <div className="mt-4 space-y-6">
-                  {daysOfWeek.map((day) => (
-                    <div key={day}>
-                      <h3 className="text-lg font-semibold mb-2">{daysOfWeekIndonesian[day]}</h3>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[20%]">Waktu</TableHead>
-                            <TableHead className="w-[35%]">Mata Pelajaran</TableHead>
-                            <TableHead className="w-[35%]">Guru</TableHead>
-                            <TableHead className="w-[10%] text-right">Aksi</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {getScheduleForDay(cls.id, day).length > 0 ? (
-                            getScheduleForDay(cls.id, day).map((schedule) => {
-                              const subject = getSubjectById(schedule.subjectId);
-                              const teacher = getTeacherById(schedule.teacherId);
-                              return (
-                                <TableRow key={schedule.id}>
-                                  <TableCell>
-                                    {schedule.startTime} - {schedule.endTime}
-                                  </TableCell>
-                                  <TableCell>{subject?.name || "N/A"}</TableCell>
-                                  <TableCell>{teacher?.name || "N/A"}</TableCell>
-                                  <TableCell className="text-right">
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                          <span className="sr-only">Buka menu</span>
-                                          <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => handleDeleteClick(schedule)}>
-                                          Hapus
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })
-                          ) : (
+          <Tabs defaultValue={classes[0]?.id || "none"}>
+            {classes.length > 0 && (
+                <TabsList className="grid w-full grid-cols-5 mb-4">
+                {classes.map((cls) => (
+                    <TabsTrigger key={cls.id} value={cls.id}>
+                    {cls.name}
+                    </TabsTrigger>
+                ))}
+                </TabsList>
+            )}
+            {classes.length > 0 ? (
+                classes.map((cls) => (
+                <TabsContent key={cls.id} value={cls.id}>
+                    <div className="mt-4 space-y-6">
+                    {daysOfWeek.map((day) => (
+                        <div key={day}>
+                        <h3 className="text-lg font-semibold mb-2">{daysOfWeekIndonesian[day]}</h3>
+                        <Table>
+                            <TableHeader>
                             <TableRow>
-                              <TableCell
-                                colSpan={4}
-                                className="text-center h-24"
-                              >
-                                Tidak ada jadwal untuk hari {daysOfWeekIndonesian[day]}.
-                              </TableCell>
+                                <TableHead className="w-[20%]">Waktu</TableHead>
+                                <TableHead className="w-[35%]">Mata Pelajaran</TableHead>
+                                <TableHead className="w-[35%]">Guru</TableHead>
+                                <TableHead className="w-[10%] text-right">Aksi</TableHead>
                             </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
+                            </TableHeader>
+                            <TableBody>
+                            {getScheduleForDay(cls.id, day).length > 0 ? (
+                                getScheduleForDay(cls.id, day).map((schedule) => {
+                                const subject = getSubjectById(schedule.subjectId);
+                                const teacher = getTeacherById(schedule.teacherId);
+                                return (
+                                    <TableRow key={schedule.id}>
+                                    <TableCell>
+                                        {schedule.startTime} - {schedule.endTime}
+                                    </TableCell>
+                                    <TableCell>{subject?.name || "N/A"}</TableCell>
+                                    <TableCell>{teacher?.name || "N/A"}</TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                            <span className="sr-only">Buka menu</span>
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleDeleteClick(schedule)}>
+                                            Hapus
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                    </TableRow>
+                                );
+                                })
+                            ) : (
+                                <TableRow>
+                                <TableCell
+                                    colSpan={4}
+                                    className="text-center h-24"
+                                >
+                                    Tidak ada jadwal untuk hari {daysOfWeekIndonesian[day]}.
+                                </TableCell>
+                                </TableRow>
+                            )}
+                            </TableBody>
+                        </Table>
+                        </div>
+                    ))}
                     </div>
-                  ))}
+                </TabsContent>
+                ))
+            ) : (
+                <div className="text-center text-muted-foreground py-12">
+                    <p>Tidak ada data kelas untuk menampilkan jadwal. Silakan tambah kelas terlebih dahulu.</p>
                 </div>
-              </TabsContent>
-            ))}
+            )}
           </Tabs>
-          ) : (
-            <div className="text-center text-muted-foreground py-12">
-                <p>Tidak ada data kelas untuk menampilkan jadwal. Silakan tambah kelas terlebih dahulu.</p>
-            </div>
-          )}
         </CardContent>
       </Card>
       <Dialog open={open} onOpenChange={setOpen}>
