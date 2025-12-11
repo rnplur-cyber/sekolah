@@ -36,10 +36,10 @@ export async function GET() {
 // CREATE a new teacher
 export async function POST(req: NextRequest) {
   try {
-    const { name, nip, subjectId, taughtClassIds, avatarUrl, avatarHint } = await req.json();
+    const { name, nip, subjectId, taughtClassIds = [], avatarUrl, avatarHint } = await req.json();
 
-    if (!name || !nip || !subjectId || !taughtClassIds || !taughtClassIds.length) {
-      return NextResponse.json({ message: 'Semua field harus diisi.' }, { status: 400 });
+    if (!name || !nip || !subjectId) {
+      return NextResponse.json({ message: 'Nama, NIP, dan Mata Pelajaran harus diisi.' }, { status: 400 });
     }
 
     const teacherId = `TCH-${nanoid()}`;
@@ -53,9 +53,9 @@ export async function POST(req: NextRequest) {
             [teacherId, name, nip, subjectId, avatarUrl || `https://picsum.photos/seed/${teacherId}/100/100`, avatarHint || 'person portrait']
         );
 
-        // Insert into teacher_classes table
-        const classValues = taughtClassIds.map((classId: string) => [teacherId, classId]);
-        if (classValues.length > 0) {
+        // Insert into teacher_classes table if there are any classes
+        if (taughtClassIds && taughtClassIds.length > 0) {
+            const classValues = taughtClassIds.map((classId: string) => [teacherId, classId]);
             await connection.query('INSERT INTO teacher_classes (teacherId, classId) VALUES ?', [classValues]);
         }
 
