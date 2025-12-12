@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const [rows] = await db.execute(`
       SELECT 
-        s.id, s.name, s.classId, s.avatarUrl, s.avatarHint,
+        s.id, s.name, s.classId, s.avatarUrl, s.avatarHint, s.applicantId,
         c.name AS className
       FROM students s
       LEFT JOIN classes c ON s.classId = c.id

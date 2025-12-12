@@ -6,6 +6,7 @@ export type Student = {
   className?: string;
   avatarUrl: string;
   avatarHint: string;
+  applicantId?: string; // To link back to the admission application
 };
 
 export type AttendanceRecord = {

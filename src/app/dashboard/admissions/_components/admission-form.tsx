@@ -29,6 +29,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { useState } from "react";
 
 const currentYear = new Date().getFullYear();
 const academicYears = Array.from({ length: 3 }, (_, i) => `${currentYear + i}/${currentYear + i + 1}`);
@@ -43,7 +44,7 @@ const formSchema = z.object({
   gender: z.string().nonempty("Jenis kelamin harus dipilih."),
   address: z.string().min(10, "Alamat harus diisi."),
   parentName: z.string().min(2, "Nama orang tua harus diisi."),
-  contact: z.string().min(10, "Nomor kontak harus diisi."),
+  contact: z.string().min(10, "Nomor kontak harus diisi.").regex(/^[0-9]+$/, "Hanya boleh berisi angka."),
   academicYear: z.string().nonempty("Tahun ajaran harus dipilih."),
 });
 
@@ -55,6 +56,7 @@ interface AdmissionFormProps {
 
 export function AdmissionForm({ onSuccess }: AdmissionFormProps) {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<AdmissionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -65,17 +67,36 @@ export function AdmissionForm({ onSuccess }: AdmissionFormProps) {
       address: "",
       parentName: "",
       contact: "",
-      academicYear: "",
+      academicYear: academicYears[0],
     },
   });
 
-  const onSubmit = (values: AdmissionFormValues) => {
-    console.log("Data Pendaftar Baru:", values);
-    toast({
-        title: "Pendaftar Ditambahkan",
-        description: `${values.name} telah berhasil terdaftar.`,
-    });
-    onSuccess();
+  const onSubmit = async (values: AdmissionFormValues) => {
+    setIsSubmitting(true);
+    try {
+        const response = await fetch('/api/admissions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(values),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Gagal menambahkan pendaftar.');
+        }
+        toast({
+            title: "Pendaftar Ditambahkan",
+            description: `${values.name} telah berhasil terdaftar.`,
+        });
+        onSuccess();
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Gagal",
+            description: error.message
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -174,7 +195,7 @@ export function AdmissionForm({ onSuccess }: AdmissionFormProps) {
                             selected={field.value}
                             onSelect={field.onChange}
                             disabled={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
+                                date > new Date() || date < new Date("1950-01-01")
                             }
                             initialFocus
                         />
@@ -239,14 +260,14 @@ export function AdmissionForm({ onSuccess }: AdmissionFormProps) {
             <FormItem>
               <FormLabel>Nomor Kontak Orang Tua / Wali</FormLabel>
               <FormControl>
-                <Input placeholder="contoh, 081234567890" {...field} />
+                <Input type="tel" placeholder="contoh, 081234567890" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <div className="flex justify-end pt-4">
-          <Button type="submit">Tambah Pendaftar</Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : 'Tambah Pendaftar'}</Button>
         </div>
       </form>
     </Form>

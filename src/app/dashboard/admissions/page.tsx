@@ -27,7 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { type NewStudentApplicant, type AdmissionStatus } from "@/lib/types";
-import { PlusCircle, MoreHorizontal, Check, X } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Check, X, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -71,20 +71,31 @@ export default function AdmissionsPage() {
   const [academicYearFilter, setAcademicYearFilter] = useState("all");
   const { toast } = useToast();
 
-  // API for admissions not implemented, using mock data and local state manipulation for now
-  useEffect(() => {
-      // Simulating fetch
+  const fetchApplicants = async () => {
       setIsLoading(true);
-      setTimeout(() => {
-          // In real app: fetch('/api/admissions').then(...)
-          setApplicants([]);
+      try {
+          const response = await fetch('/api/admissions');
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || "Gagal memuat data pendaftar.");
+          setApplicants(data.applicants || []);
+      } catch (error: any) {
+          toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: error.message
+          });
+      } finally {
           setIsLoading(false);
-      }, 1000);
+      }
+  };
+
+  useEffect(() => {
+    fetchApplicants();
   }, []);
 
   const academicYears = useMemo(() => {
     const years = new Set(applicants.map(app => app.academicYear));
-    return ["all", ...Array.from(years)];
+    return ["all", ...Array.from(years).sort().reverse()];
   }, [applicants]);
 
   const filteredApplicants = useMemo(() => {
@@ -102,30 +113,39 @@ export default function AdmissionsPage() {
     return filteredApplicants.slice(startIndex, endIndex);
   }, [currentPage, filteredApplicants]);
   
-  // Reset to page 1 when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [academicYearFilter]);
 
 
   const handleSuccess = () => {
-    // In a real app, you'd refetch the data here.
-    // For now, we just close the dialog.
     setOpen(false);
-    //
+    fetchApplicants();
   };
 
-  const handleStatusChange = (applicantId: string, newStatus: AdmissionStatus) => {
-    // This is a local state update, in a real app this would be an API call.
-    setApplicants(prev => 
-        prev.map(app => 
-            app.id === applicantId ? { ...app, status: newStatus } : app
-        )
-    );
-    toast({
-        title: "Status Diperbarui (Simulasi)",
-        description: `Status pendaftar telah diubah menjadi ${newStatus === 'Accepted' ? 'Diterima' : 'Ditolak'}.`,
-    });
+  const handleStatusChange = async (applicantId: string, newStatus: AdmissionStatus) => {
+    try {
+        const response = await fetch(`/api/admissions/${applicantId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Gagal memperbarui status.');
+        }
+        toast({
+            title: "Status Diperbarui",
+            description: data.message,
+        });
+        fetchApplicants();
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Gagal",
+            description: error.message,
+        });
+    }
   };
 
   return (
@@ -135,10 +155,13 @@ export default function AdmissionsPage() {
           <div>
             <CardTitle>Penerimaan Siswa Baru</CardTitle>
             <CardDescription>
-              Kelola dan lacak pendaftaran siswa baru.
+              Kelola dan lacak pendaftaran siswa baru. Pendaftar yang diterima akan otomatis menjadi siswa.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={fetchApplicants} disabled={isLoading}>
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
             <Button onClick={() => setOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Tambah Pendaftar
@@ -206,7 +229,7 @@ export default function AdmissionsPage() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button variant="ghost" className="h-8 w-8 p-0" disabled={applicant.status === 'Accepted'}>
                           <span className="sr-only">Buka menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -227,7 +250,7 @@ export default function AdmissionsPage() {
               )) : (
                  <TableRow>
                     <TableCell colSpan={8} className="text-center h-24">
-                        Tidak ada data pendaftar.
+                        Tidak ada data pendaftar untuk filter yang dipilih.
                     </TableCell>
                   </TableRow>
               )}
