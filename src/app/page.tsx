@@ -31,7 +31,7 @@ export default function SchoolPortfolioPage() {
             </Link>
           </nav>
           <Button asChild>
-            <Link href="#">Pendaftaran</Link>
+            <Link href="/pendaftaran">Pendaftaran</Link>
           </Button>
         </div>
       </header>
@@ -46,8 +46,8 @@ export default function SchoolPortfolioPage() {
             <p className="mt-4 max-w-2xl text-lg md:text-xl">
               Pendidikan berkualitas yang mengintegrasikan teknologi dan nilai-nilai luhur untuk masa depan yang lebih cerah.
             </p>
-            <Button size="lg" className="mt-8">
-              Daftar Sekarang
+            <Button size="lg" className="mt-8" asChild>
+              <Link href="/pendaftaran">Daftar Sekarang</Link>
             </Button>
           </div>
         </section>
@@ -219,8 +219,8 @@ export default function SchoolPortfolioPage() {
             <p className="mt-4 max-w-xl mx-auto">
               Jadilah bagian dari komunitas pembelajar yang dinamis dan berprestasi. Mulailah perjalanan Anda bersama kami.
             </p>
-            <Button variant="secondary" size="lg" className="mt-8">
-              Lihat Alur Pendaftaran
+            <Button variant="secondary" size="lg" className="mt-8" asChild>
+              <Link href="/alur-pendaftaran">Lihat Alur Pendaftaran</Link>
             </Button>
           </div>
         </section>
