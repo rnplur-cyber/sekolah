@@ -109,12 +109,12 @@ export default function RegistrationFormPage() {
   const RaporTerakhirRef = form.register("raporTerakhir");
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
        <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
           <Link href="/" className="flex items-center gap-2" prefetch={false}>
             <AppLogo className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold tracking-tight">Sekolah Cerdas</span>
+            <span className="text-xl font-bold tracking-tight text-slate-800">Sekolah Ceria</span>
           </Link>
            <Button variant="outline" asChild>
             <Link href="/alur-pendaftaran">Lihat Alur Pendaftaran</Link>
@@ -124,7 +124,7 @@ export default function RegistrationFormPage() {
 
       <main className="flex-1 py-12 md:py-16">
         <div className="container mx-auto px-4 md:px-6">
-          <Card className="max-w-4xl mx-auto">
+          <Card className="max-w-4xl mx-auto shadow-md rounded-xl">
             <CardHeader>
               <CardTitle className="text-3xl font-bold">
                 Formulir Pendaftaran Siswa Baru
@@ -198,7 +198,7 @@ export default function RegistrationFormPage() {
                                       selected={field.value}
                                       onSelect={field.onChange}
                                       disabled={(date) =>
-                                        date > new Date() || date < new Date("1900-01-01")
+                                        date > new Date() || date < new Date("2010-01-01")
                                       }
                                       initialFocus
                                     />
@@ -253,8 +253,11 @@ export default function RegistrationFormPage() {
                               <FormItem>
                                 <FormLabel>Sekolah Asal</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Contoh: SMP Negeri 1 Kota Ilmu" {...field} />
+                                  <Input placeholder="Contoh: TK Tunas Bangsa" {...field} />
                                 </FormControl>
+                                <FormDescription>
+                                    Jika dari PAUD/TK, sebutkan nama sekolahnya. Jika tidak, isi dengan "-".
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -335,11 +338,11 @@ export default function RegistrationFormPage() {
                             name="raporTerakhir"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Rapor Terakhir</FormLabel>
+                                <FormLabel>Rapor/Ijazah TK (Jika Ada)</FormLabel>
                                 <FormControl>
                                 <Input type="file" {...RaporTerakhirRef} />
                                 </FormControl>
-                                <FormDescription>Rapor semester terakhir. File: PDF, JPG, PNG. Maksimal 5MB.</FormDescription>
+                                <FormDescription>Opsional. File: PDF, JPG, PNG. Maksimal 5MB.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                             )}
@@ -347,7 +350,7 @@ export default function RegistrationFormPage() {
                     </div>
                   </section>
                   
-                  <Button type="submit" size="lg" className="w-full">
+                  <Button type="submit" size="lg" className="w-full font-bold">
                     Kirim Pendaftaran
                   </Button>
                 </form>
@@ -357,9 +360,9 @@ export default function RegistrationFormPage() {
         </div>
       </main>
       
-       <footer className="bg-muted text-muted-foreground py-6">
+       <footer className="bg-amber-50/50 text-muted-foreground py-6">
          <div className="container mx-auto text-center text-sm">
-            &copy; 2024 Sekolah Cerdas. Semua Hak Dilindungi.
+            &copy; 2024 Sekolah Ceria. Semua Hak Dilindungi.
         </div>
       </footer>
     </div>
