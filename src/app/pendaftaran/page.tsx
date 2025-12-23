@@ -35,15 +35,20 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { AppLogo } from "@/components/icons";
 import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase-client"; // Pastikan Anda membuat client ini
+import { nanoid } from 'nanoid';
+import { useToast } from "@/hooks/use-toast";
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
 
 const formSchema = z.object({
   namaLengkap: z.string().min(3, "Nama lengkap harus diisi"),
@@ -63,7 +68,7 @@ const formSchema = z.object({
     .refine((files) => files?.length == 1, "Akta kelahiran harus diunggah.")
     .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Ukuran file maksimal 5MB.`)
     .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
       "Format file harus .jpg, .png, atau .pdf"
     ),
   kartuKeluarga: z
@@ -71,7 +76,7 @@ const formSchema = z.object({
     .refine((files) => files?.length == 1, "Kartu keluarga harus diunggah.")
     .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Ukuran file maksimal 5MB.`)
     .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
       "Format file harus .jpg, .png, atau .pdf"
     ),
    raporTerakhir: z
@@ -79,12 +84,15 @@ const formSchema = z.object({
     .refine((files) => files?.length == 1, "Rapor terakhir harus diunggah.")
     .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Ukuran file maksimal 5MB.`)
     .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      (files) => ACCEPTED_FILE_TYPES.includes(files?.[0]?.type),
       "Format file harus .jpg, .png, atau .pdf"
     ),
 });
 
 export default function RegistrationFormPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -97,11 +105,86 @@ export default function RegistrationFormPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // NOTE: Logic for form submission goes here.
-    // For now, we'll just log the values.
-    console.log(values);
-    alert("Pendaftaran berhasil! (Data di-log di konsol)");
+  const uploadFile = async (file: File, bucket: string): Promise<string | null> => {
+    if (!file) return null;
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${nanoid()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    // =================================================================
+    // KODE SPESIFIK SUPABASE UNTUK UPLOAD FILE
+    // Ganti baris di bawah ini dengan kode Supabase Anda
+    // Contoh: const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
+    // =================================================================
+    const { error } = await supabase.storage.from(bucket).upload(filePath, file);
+    
+    if (error) {
+        console.error(`Error uploading to ${bucket}:`, error.message);
+        return null;
+    }
+
+    // Ambil URL publik dari file yang baru diunggah
+    const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    try {
+        // 1. Upload semua file ke Supabase Storage
+        const aktaUrl = await uploadFile(values.aktaKelahiran[0], 'dokumen-pendaftaran');
+        const kkUrl = await uploadFile(values.kartuKeluarga[0], 'dokumen-pendaftaran');
+        const raporUrl = await uploadFile(values.raporTerakhir[0], 'dokumen-pendaftaran');
+
+        if (!aktaUrl || !kkUrl || !raporUrl) {
+            throw new Error("Gagal mengunggah salah satu atau lebih dokumen.");
+        }
+        
+        // 2. Siapkan data untuk disimpan ke tabel
+        const dataToInsert = {
+            nama_lengkap: values.namaLengkap,
+            tempat_lahir: values.tempatLahir,
+            tanggal_lahir: values.tanggalLahir,
+            jenis_kelamin: values.jenisKelamin,
+            alamat: values.alamat,
+            sekolah_asal: values.sekolahAsal,
+            nama_orang_tua: values.namaOrangTua,
+            kontak_orang_tua: values.kontakOrangTua,
+            url_akta_kelahiran: aktaUrl,
+            url_kartu_keluarga: kkUrl,
+            url_rapor_terakhir: raporUrl,
+            status: 'pending' // Status awal pendaftaran
+        };
+        
+        // =================================================================
+        // KODE SPESIFIK SUPABASE UNTUK MENYIMPAN DATA
+        // Ganti baris di bawah ini dengan kode Supabase Anda.
+        // Pastikan 'calon_siswa' adalah nama tabel Anda di Supabase.
+        // Contoh: const { data, error } = await supabase.from('calon_siswa').insert([dataToInsert]);
+        // =================================================================
+        const { error: insertError } = await supabase.from('pendaftaran').insert([dataToInsert]);
+
+        if (insertError) {
+             throw new Error(`Gagal menyimpan data pendaftaran: ${insertError.message}`);
+        }
+
+        toast({
+            title: "Pendaftaran Berhasil!",
+            description: "Data Anda telah kami terima. Terima kasih.",
+        });
+        form.reset();
+
+    } catch (error: any) {
+         toast({
+            variant: "destructive",
+            title: "Terjadi Kesalahan",
+            description: error.message || "Tidak dapat memproses pendaftaran Anda saat ini.",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
   
   const AktaKelahiranRef = form.register("aktaKelahiran");
@@ -350,8 +433,9 @@ export default function RegistrationFormPage() {
                     </div>
                   </section>
                   
-                  <Button type="submit" size="lg" className="w-full font-bold">
-                    Kirim Pendaftaran
+                  <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting}>
+                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isSubmitting ? "Mengirim..." : "Kirim Pendaftaran"}
                   </Button>
                 </form>
               </Form>

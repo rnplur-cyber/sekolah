@@ -1,15 +1,12 @@
-// IMPORTANT: My capabilities are limited to Firebase.
-// I cannot write code for Supabase. You will need to implement the connection logic yourself.
 
 import { createClient } from '@supabase/supabase-js';
 
-// TODO: Replace with your actual Supabase client initialization.
-// The environment variables should be automatically loaded from your .env file.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!;
 
-// In a real scenario, you would initialize the Supabase client here.
-// Example: const supabase = createClient(supabaseUrl, supabaseKey);
+// Inisialisasi klien Supabase
+export const supabase = createClient(supabaseUrl, supabaseKey);
+
 
 /**
  * Checks the connection to Supabase by performing a simple query.
@@ -21,7 +18,6 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!;
  */
 export async function checkSupabaseConnection(): Promise<boolean> {
   console.log('Attempting to check Supabase connection...');
-  console.log('URL:', supabaseUrl);
   
   if (!supabaseUrl || !supabaseKey) {
     console.error('Supabase URL or Key is not defined in environment variables.');
@@ -30,26 +26,25 @@ export async function checkSupabaseConnection(): Promise<boolean> {
   
   try {
     // =================================================================
-    // START OF CODE TO REPLACE
+    // KODE UNTUK MEMERIKSA KONEKSI
+    // Anda bisa mengganti 'pendaftaran' dengan nama tabel publik lain jika ada.
+    // Query ini hanya mengambil 1 baris dan tidak mengembalikan datanya,
+    // hanya untuk memastikan koneksi dan RLS (Row Level Security) memperbolehkan.
     // =================================================================
     
-    // This is a placeholder. You need to replace this with a real Supabase query.
-    // For example:
-    // const supabase = createClient(supabaseUrl, supabaseKey);
-    // const { error } = await supabase.from('your_table_name').select('*').limit(1);
-    // if (error) {
-    //   console.error('Supabase connection error:', error.message);
-    //   return false;
-    // }
+    const { error } = await supabase.from('pendaftaran').select('*').limit(1);
+
+    if (error) {
+      console.error('Supabase connection error:', error.message);
+      // Jika error karena tabel tidak ditemukan, itu bukan error koneksi
+      if (error.code === '42P01') {
+         console.warn("Connection successful, but table 'pendaftaran' not found. Please create it.");
+         return true;
+      }
+      return false;
+    }
     
-    // Simulating a successful connection for demonstration purposes.
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Placeholder check successful. Replace with a real Supabase query.');
-    
-    // =================================================================
-    // END OF CODE TO REPLACE
-    // =================================================================
-    
+    console.log('Supabase connection successful!');
     return true;
   } catch (error) {
     console.error('An unexpected error occurred during connection check:', error);
