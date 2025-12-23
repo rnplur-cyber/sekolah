@@ -42,7 +42,7 @@ import { AppLogo } from "@/components/icons";
 import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase-client"; // Pastikan Anda membuat client ini
+import { supabase } from "@/lib/supabase-client";
 import { nanoid } from 'nanoid';
 import { useToast } from "@/hooks/use-toast";
 
@@ -112,11 +112,6 @@ export default function RegistrationFormPage() {
     const fileName = `${nanoid()}.${fileExt}`;
     const filePath = `${fileName}`;
 
-    // =================================================================
-    // KODE SPESIFIK SUPABASE UNTUK UPLOAD FILE
-    // Ganti baris di bawah ini dengan kode Supabase Anda
-    // Contoh: const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
-    // =================================================================
     const { error } = await supabase.storage.from(bucket).upload(filePath, file);
     
     if (error) {
@@ -124,7 +119,6 @@ export default function RegistrationFormPage() {
         return null;
     }
 
-    // Ambil URL publik dari file yang baru diunggah
     const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
     return data.publicUrl;
   };
@@ -133,7 +127,6 @@ export default function RegistrationFormPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-        // 1. Upload semua file ke Supabase Storage
         const aktaUrl = await uploadFile(values.aktaKelahiran[0], 'dokumen-pendaftaran');
         const kkUrl = await uploadFile(values.kartuKeluarga[0], 'dokumen-pendaftaran');
         const raporUrl = await uploadFile(values.raporTerakhir[0], 'dokumen-pendaftaran');
@@ -142,7 +135,6 @@ export default function RegistrationFormPage() {
             throw new Error("Gagal mengunggah salah satu atau lebih dokumen.");
         }
         
-        // 2. Siapkan data untuk disimpan ke tabel
         const dataToInsert = {
             nama_lengkap: values.namaLengkap,
             tempat_lahir: values.tempatLahir,
@@ -155,15 +147,9 @@ export default function RegistrationFormPage() {
             url_akta_kelahiran: aktaUrl,
             url_kartu_keluarga: kkUrl,
             url_rapor_terakhir: raporUrl,
-            status: 'pending' // Status awal pendaftaran
+            status: 'pending'
         };
         
-        // =================================================================
-        // KODE SPESIFIK SUPABASE UNTUK MENYIMPAN DATA
-        // Ganti baris di bawah ini dengan kode Supabase Anda.
-        // Pastikan 'calon_siswa' adalah nama tabel Anda di Supabase.
-        // Contoh: const { data, error } = await supabase.from('calon_siswa').insert([dataToInsert]);
-        // =================================================================
         const { error: insertError } = await supabase.from('pendaftaran').insert([dataToInsert]);
 
         if (insertError) {
@@ -425,7 +411,7 @@ export default function RegistrationFormPage() {
                                 <FormControl>
                                 <Input type="file" {...RaporTerakhirRef} />
                                 </FormControl>
-                                <FormDescription>Opsional. File: PDF, JPG, PNG. Maksimal 5MB.</FormDescription>
+                                <FormDescription>File: PDF, JPG, PNG. Maksimal 5MB.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                             )}
@@ -452,3 +438,5 @@ export default function RegistrationFormPage() {
     </div>
   );
 }
+
+    
