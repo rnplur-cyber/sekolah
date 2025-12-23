@@ -3,73 +3,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // == Helper Functions ==
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Admin role is defined by a custom claim `role` set to 'admin'.
-    function isAdmin() {
-      return isSignedIn() && request.auth.token.role == 'admin';
-    }
-
-    // Teacher role is defined by a custom claim `role` set to 'teacher'.
-    function isTeacher() {
-      return isSignedIn() && request.auth.token.role == 'teacher';
-    }
-
-    // Check if the user is the owner of a document (e.g., their own staff profile)
-    function isOwner(userId) {
-        return request.auth.uid == userId;
-    }
-
-    // Check if a teacher is assigned to a specific class
-    function isTeacherForClass(classId) {
-      return isTeacher() && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.taughtClassIds.hasAny([classId]);
-    }
-
-
-    // == Default Admin Access ==
-    // By default, grant admin full access to everything.
-    // Specific teacher rules will override this for their role.
     match /{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-
-    // == Teacher Access Rules ==
-
-    // Staff can read their own profile
-    match /staff/{staffId} {
-      allow read: if isTeacher() && isOwner(staffId);
-      // Admin can manage all staff
-      allow write: if isAdmin();
-    }
-
-    // Teachers can read subjects.
-    match /subjects/{subjectId} {
-      allow read: if isTeacher();
-    }
-
-    // Teachers can read data for classes they teach.
-    match /classes/{classId} {
-      allow read: if isTeacherForClass(classId);
-    }
-
-    // Teachers can read student data from the classes they teach.
-    match /students/{studentId} {
-      allow read: if isTeacher() && isTeacherForClass(get(/databases/$(database)/documents/students/$(studentId)).data.classId);
-    }
-
-    // Teachers can manage their own teaching journals.
-    match /teachingJournals/{journalId} {
-      allow read, create, update, delete: if isTeacher() && request.auth.uid == resource.data.teacherId;
-    }
-
-    // Teachers can create attendance records for students in their classes.
-    match /attendanceRecords/{recordId} {
-      allow create: if isTeacher() && isTeacherForClass(request.resource.data.classId);
+      allow read, write: if false;
     }
   }
 }
