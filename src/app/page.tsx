@@ -37,7 +37,7 @@ export default function SchoolPortfolioPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
       <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-          <Link href="#" className="flex items-center gap-2" prefetch={false}>
+          <Link href="/" className="flex items-center gap-2" prefetch={false}>
             <AppLogo className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold tracking-tight text-slate-800">Sekolah Ceria</span>
           </Link>
@@ -51,7 +51,7 @@ export default function SchoolPortfolioPage() {
             <Link href="#testimoni" className="hover:text-primary" prefetch={false}>
               Testimoni
             </Link>
-            <Link href="#" className="hover:text-primary" prefetch={false}>
+            <Link href="/kontak" className="hover:text-primary" prefetch={false}>
               Kontak
             </Link>
           </nav>
@@ -272,9 +272,9 @@ export default function SchoolPortfolioPage() {
           <div>
             <h3 className="text-lg font-semibold text-foreground">Tautan Cepat</h3>
             <ul className="mt-2 space-y-1 text-sm">
-              <li><Link href="#" className="hover:text-primary">Tentang Kami</Link></li>
-              <li><Link href="#" className="hover:text-primary">Akademik</Link></li>
-              <li><Link href="#" className="hover:text-primary">Berita</Link></li>
+              <li><Link href="/tentang" className="hover:text-primary">Tentang Kami</Link></li>
+              <li><Link href="/akademik" className="hover:text-primary">Akademik</Link></li>
+              <li><Link href="/berita" className="hover:text-primary">Berita</Link></li>
             </ul>
           </div>
           <div>
@@ -297,3 +297,5 @@ export default function SchoolPortfolioPage() {
     </div>
   );
 }
+
+    
