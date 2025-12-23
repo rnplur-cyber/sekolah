@@ -62,26 +62,29 @@ export default function SchoolPortfolioPage() {
       </header>
 
       <main className="flex-1">
-        <section className="relative w-full bg-amber-50 overflow-hidden">
-         <div className="container mx-auto px-4 md:px-6 h-[70vh] flex flex-col justify-center items-center text-center">
-            <div className="absolute top-10 left-10 w-24 h-24 opacity-30 animate-pulse">
-                <SunIcon />
+        <section className="relative w-full overflow-hidden h-[70vh] flex items-center justify-center">
+             <Image
+                src="https://picsum.photos/seed/hero-bg/1200/800"
+                alt="Anak-anak belajar teknologi di sekolah Islam"
+                fill
+                className="object-cover"
+                data-ai-hint="muslim kids technology school"
+                priority
+             />
+             <div className="absolute inset-0 bg-primary/20 backdrop-brightness-75"></div>
+             <div className="container mx-auto px-4 md:px-6 h-full flex flex-col justify-center items-center text-center">
+                <div className="relative z-10 text-white">
+                    <h1 className="text-4xl font-extrabold tracking-tighter md:text-6xl drop-shadow-lg">
+                    Tempat Ceria untuk Belajar & Bertumbuh
+                    </h1>
+                    <p className="mt-4 max-w-2xl text-lg md:text-xl drop-shadow-md">
+                    Pendidikan Islami berbasis teknologi yang menumbuhkan kreativitas dan karakter.
+                    </p>
+                    <Button size="lg" className="mt-8 font-bold" asChild>
+                    <Link href="/pendaftaran">Daftar Sekarang!</Link>
+                    </Button>
+                </div>
             </div>
-            <div className="absolute bottom-10 right-10 w-32 h-32 opacity-20 animate-pulse delay-500">
-                <SunIcon />
-            </div>
-             <div className="relative z-10">
-                <h1 className="text-4xl font-extrabold tracking-tighter md:text-6xl text-slate-900">
-                Tempat Ceria untuk Belajar & Bertumbuh
-                </h1>
-                <p className="mt-4 max-w-2xl text-lg md:text-xl text-slate-600">
-                Pendidikan menyenangkan yang menumbuhkan kreativitas dan karakter anak sejak dini.
-                </p>
-                <Button size="lg" className="mt-8 font-bold" asChild>
-                <Link href="/pendaftaran">Daftar Sekarang!</Link>
-                </Button>
-            </div>
-          </div>
         </section>
 
         <section id="fitur" className="py-12 md:py-24">
